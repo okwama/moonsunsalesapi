@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Target = exports.VisibilityReport = exports.FeedbackReport = exports.ProductReport = exports.CategoryPriceOption = exports.Category = exports.StoreInventory = exports.Store = exports.Leave = exports.Task = exports.UpliftSaleItem = exports.UpliftSale = exports.LoginHistory = exports.JourneyPlan = exports.Clients = exports.SalesRep = void 0;
+exports.Upload = exports.Target = exports.VisibilityReport = exports.FeedbackReport = exports.ProductReport = exports.CategoryPriceOption = exports.Category = exports.StoreInventory = exports.Store = exports.Leave = exports.Task = exports.UpliftSaleItem = exports.UpliftSale = exports.LoginHistory = exports.JourneyPlan = exports.Clients = exports.SalesRep = void 0;
 var sales_rep_entity_1 = require("./sales-rep.entity");
 Object.defineProperty(exports, "SalesRep", { enumerable: true, get: function () { return sales_rep_entity_1.SalesRep; } });
 var clients_entity_1 = require("./clients.entity");
@@ -33,4 +33,6 @@ var visibility_report_entity_1 = require("./visibility-report.entity");
 Object.defineProperty(exports, "VisibilityReport", { enumerable: true, get: function () { return visibility_report_entity_1.VisibilityReport; } });
 var target_entity_1 = require("./target.entity");
 Object.defineProperty(exports, "Target", { enumerable: true, get: function () { return target_entity_1.Target; } });
+var upload_entity_1 = require("./upload.entity");
+Object.defineProperty(exports, "Upload", { enumerable: true, get: function () { return upload_entity_1.Upload; } });
 //# sourceMappingURL=index.js.map

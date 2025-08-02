@@ -13,4 +13,5 @@ export { CategoryPriceOption } from './category-price-option.entity';
 export { ProductReport } from './product-report.entity';
 export { FeedbackReport } from './feedback-report.entity';
 export { VisibilityReport } from './visibility-report.entity';
-export { Target } from './target.entity'; 
+export { Target } from './target.entity';
+export { Upload } from './upload.entity'; 

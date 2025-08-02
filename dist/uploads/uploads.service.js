@@ -8,22 +8,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UploadsService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
+const cloudinary_service_1 = require("../cloudinary/cloudinary.service");
 let UploadsService = class UploadsService {
-    constructor(dataSource) {
-        this.dataSource = dataSource;
+    constructor(cloudinaryService) {
+        this.cloudinaryService = cloudinaryService;
     }
     async findAll(query) {
         try {
-            const result = await this.dataSource.query('CALL GetUploads(?, ?, ?)', [query.userId, query.type, query.limit]);
-            return result[0];
+            return [];
         }
         catch (error) {
             console.error('Error fetching uploads:', error);
@@ -32,8 +27,7 @@ let UploadsService = class UploadsService {
     }
     async findOne(id) {
         try {
-            const result = await this.dataSource.query('CALL GetUploadById(?)', [id]);
-            return result[0][0];
+            return null;
         }
         catch (error) {
             console.error('Error fetching upload by ID:', error);
@@ -42,30 +36,38 @@ let UploadsService = class UploadsService {
     }
     async uploadFile(file, uploadDto) {
         try {
-            const result = await this.dataSource.query('CALL CreateUpload(?, ?, ?, ?, ?)', [
-                uploadDto.userId,
-                file.filename,
-                file.originalname,
-                file.mimetype,
-                file.size
-            ]);
-            return result[0][0];
+            console.log('📤 Starting file upload to Cloudinary...');
+            console.log('📤 File details:', {
+                originalname: file.originalname,
+                mimetype: file.mimetype,
+                size: file.size,
+                userId: uploadDto.userId
+            });
+            const uploadResult = await this.cloudinaryService.uploadToCloudinary(file.buffer, {
+                mimetype: file.mimetype,
+                folder: 'whoosh/uploads',
+                public_id: `upload_${Date.now()}_${uploadDto.userId}`,
+            });
+            console.log('✅ File uploaded successfully to Cloudinary:', uploadResult);
+            return {
+                success: true,
+                url: uploadResult.url,
+                fileId: uploadResult.fileId,
+                name: uploadResult.name,
+                format: uploadResult.format,
+                size: uploadResult.size,
+                userId: uploadDto.userId,
+                uploadedAt: new Date(),
+            };
         }
         catch (error) {
-            console.error('Error uploading file:', error);
+            console.error('❌ Error uploading file:', error);
             throw new Error('Failed to upload file');
         }
     }
     async create(createUploadDto) {
         try {
-            const result = await this.dataSource.query('CALL CreateUpload(?, ?, ?, ?, ?)', [
-                createUploadDto.userId,
-                createUploadDto.filename,
-                createUploadDto.originalname,
-                createUploadDto.mimetype,
-                createUploadDto.size
-            ]);
-            return result[0][0];
+            return { message: 'Use uploadFile method for file uploads' };
         }
         catch (error) {
             console.error('Error creating upload:', error);
@@ -74,15 +76,7 @@ let UploadsService = class UploadsService {
     }
     async update(id, updateUploadDto) {
         try {
-            const result = await this.dataSource.query('CALL UpdateUpload(?, ?, ?, ?, ?, ?)', [
-                id,
-                updateUploadDto.userId,
-                updateUploadDto.filename,
-                updateUploadDto.originalname,
-                updateUploadDto.mimetype,
-                updateUploadDto.size
-            ]);
-            return result[0][0];
+            return { message: 'Use uploadFile method for file uploads' };
         }
         catch (error) {
             console.error('Error updating upload:', error);
@@ -91,8 +85,7 @@ let UploadsService = class UploadsService {
     }
     async remove(id) {
         try {
-            await this.dataSource.query('CALL DeleteUpload(?)', [id]);
-            return { message: 'Upload deleted successfully' };
+            return { message: 'Use Cloudinary delete method for file deletion' };
         }
         catch (error) {
             console.error('Error deleting upload:', error);
@@ -103,7 +96,6 @@ let UploadsService = class UploadsService {
 exports.UploadsService = UploadsService;
 exports.UploadsService = UploadsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectDataSource)()),
-    __metadata("design:paramtypes", [typeorm_2.DataSource])
+    __metadata("design:paramtypes", [cloudinary_service_1.CloudinaryService])
 ], UploadsService);
 //# sourceMappingURL=uploads.service.js.map
