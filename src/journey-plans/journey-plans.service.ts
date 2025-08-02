@@ -53,7 +53,7 @@ export class JourneyPlansService {
     };
     success: boolean;
   }> {
-    const { page, limit, status, date, userId } = options;
+    const { page, limit, status, date, userId, timezone } = options;
     const offset = (page - 1) * limit;
 
     // Build query
@@ -85,6 +85,13 @@ export class JourneyPlansService {
     const endOfDay = new Date(targetDate);
     endOfDay.setDate(endOfDay.getDate() + 1);
     
+    console.log('🔍 Journey Plans Filter Debug:');
+    console.log('🔍 Target Date:', targetDate);
+    console.log('🔍 Start of Day:', startOfDay);
+    console.log('🔍 End of Day:', endOfDay);
+    console.log('🔍 User ID:', userId);
+    console.log('🔍 Status:', status);
+    
     query = query.andWhere('journeyPlan.date >= :startDate AND journeyPlan.date < :endDate', {
       startDate: startOfDay,
       endDate: endOfDay,
@@ -102,6 +109,12 @@ export class JourneyPlansService {
       .getMany();
 
     const totalPages = Math.ceil(total / limit);
+
+    console.log('🔍 Journey Plans Results:');
+    console.log('🔍 Total found:', total);
+    console.log('🔍 Data length:', data.length);
+    console.log('🔍 First journey plan date:', data[0]?.date);
+    console.log('🔍 All journey plan dates:', data.map(jp => jp.date));
 
     return {
       data,
