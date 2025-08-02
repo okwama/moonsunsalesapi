@@ -24,29 +24,56 @@ import { VisibilityReport } from '../entities/visibility-report.entity';
 
 export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOptions => {
   const useLocalDb = configService.get<string>('USE_LOCAL_DB', 'false') === 'true';
+  const isProduction = configService.get<string>('NODE_ENV', 'development') === 'production';
 
-  if (useLocalDb) {
-    console.log('🔧 Using local SQLite database for development');
+  // Force MySQL in production
+  if (isProduction) {
+    console.log('🚀 Production environment - using MySQL database');
     return {
-      type: 'sqlite',
-      database: './woosh-dev.db',
+      type: 'mysql',
+      host: configService.get<string>('DB_HOST'),
+      port: configService.get<number>('DB_PORT', 3306),
+      username: configService.get<string>('DB_USERNAME'),
+      password: configService.get<string>('DB_PASSWORD'),
+      database: configService.get<string>('DB_DATABASE'),
       entities: [
         SalesRep, Clients, Product, JourneyPlan, LoginHistory, UpliftSale, UpliftSaleItem,
         Task, Leave, Store, StoreInventory, Category, CategoryPriceOption, Order, OrderItem, Users, Notice, LeaveType,
         FeedbackReport, ProductReport, VisibilityReport,
       ],
-      synchronize: true,
-      logging: true,
+      synchronize: false,
+      logging: configService.get<boolean>('DB_LOGGING', false),
+      charset: 'utf8mb4',
+      ssl: configService.get<boolean>('DB_SSL', false),
+      extra: {
+        connectionLimit: 10,
+        charset: 'utf8mb4',
+        multipleStatements: true,
+        dateStrings: true,
+        acquireTimeout: 120000,
+        timeout: 60000,
+        reconnect: true,
+      },
+      retryAttempts: 3,
+      retryDelay: 1000,
+      connectTimeout: 30000,
+      acquireTimeout: 60000,
+      keepConnectionAlive: true,
+      autoLoadEntities: true,
     };
   }
 
+
+
+  // Development with MySQL
+  console.log('🔧 Development environment - using MySQL database');
   return {
     type: 'mysql',
     host: configService.get<string>('DB_HOST', 'localhost'),
     port: configService.get<number>('DB_PORT', 3306),
     username: configService.get<string>('DB_USERNAME', 'root'),
     password: configService.get<string>('DB_PASSWORD', ''),
-    database: configService.get<string>('DB_DATABASE', 'citlogis_ws'),
+    database: configService.get<string>('DB_DATABASE', 'citlogis_finance'),
     entities: [
       SalesRep, Clients, Product, JourneyPlan, LoginHistory, UpliftSale, UpliftSaleItem,
       Task, Leave, Store, StoreInventory, Category, CategoryPriceOption, Order, OrderItem, Users, Notice, LeaveType,
@@ -57,7 +84,7 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
     charset: 'utf8mb4',
     ssl: configService.get<boolean>('DB_SSL', false),
     extra: {
-      connectionLimit: 10, // Reduced from 20 to prevent too many connections
+      connectionLimit: 10,
       charset: 'utf8mb4',
       multipleStatements: true,
       dateStrings: true,
@@ -65,10 +92,10 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
       timeout: 60000,
       reconnect: true,
     },
-    retryAttempts: 3, // Reduced from 5
-    retryDelay: 1000, // Reduced from 2000
-    connectTimeout: 30000, // Reduced from 60000
-    acquireTimeout: 60000, // Reduced from 120000
+    retryAttempts: 3,
+    retryDelay: 1000,
+    connectTimeout: 30000,
+    acquireTimeout: 60000,
     keepConnectionAlive: true,
     autoLoadEntities: true,
   };

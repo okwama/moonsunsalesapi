@@ -5,33 +5,50 @@ import { ValidationPipe } from '@nestjs/common';
 let app: any;
 
 async function bootstrap() {
-  if (!app) {
-    app = await NestFactory.create(AppModule);
+  try {
+    if (!app) {
+      console.log('🚀 Starting NestJS application...');
+      
+      app = await NestFactory.create(AppModule);
+      
+      app.enableCors({
+        origin: true,
+        credentials: true,
+      });
+      
+      app.useGlobalPipes(new ValidationPipe({
+        transform: true,
+        whitelist: true,
+      }));
+      
+      // Set global prefix for API routes
+      app.setGlobalPrefix('api');
+      
+      await app.init();
+      
+      console.log('✅ NestJS application initialized successfully');
+    }
     
-    app.enableCors({
-      origin: true,
-      credentials: true,
-    });
-    
-    app.useGlobalPipes(new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }));
-    
-    // Set global prefix for API routes
-    app.setGlobalPrefix('api');
-    
-    await app.init();
+    return app;
+  } catch (error) {
+    console.error('❌ Failed to start NestJS application:', error);
+    throw error;
   }
-  
-  return app;
 }
 
 // For Vercel serverless
 export default async function handler(req: any, res: any) {
-  const app = await bootstrap();
-  const expressApp = app.getHttpAdapter().getInstance();
-  return expressApp(req, res);
+  try {
+    const app = await bootstrap();
+    const expressApp = app.getHttpAdapter().getInstance();
+    return expressApp(req, res);
+  } catch (error) {
+    console.error('❌ Serverless function error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
+  }
 }
 
 // For local development
@@ -41,5 +58,8 @@ if (process.env.NODE_ENV !== 'production') {
     app.listen(port, () => {
       console.log(`🚀 Application is running on: http://localhost:${port}`);
     });
+  }).catch((error) => {
+    console.error('❌ Failed to start application:', error);
+    process.exit(1);
   });
 } 
