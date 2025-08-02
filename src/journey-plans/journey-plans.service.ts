@@ -79,18 +79,16 @@ export class JourneyPlansService {
       query = query.andWhere('journeyPlan.status = :status', { status: statusValue });
     }
 
-    // Only filter by date if explicitly provided
-    if (date) {
-      const targetDate = new Date(date);
-      const startOfDay = new Date(targetDate);
-      const endOfDay = new Date(targetDate);
-      endOfDay.setDate(endOfDay.getDate() + 1);
-      
-      query = query.andWhere('journeyPlan.date >= :startDate AND journeyPlan.date < :endDate', {
-        startDate: startOfDay,
-        endDate: endOfDay,
-      });
-    }
+    // Always filter by date - use provided date or default to today
+    const targetDate = date || new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const startOfDay = new Date(targetDate);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+    
+    query = query.andWhere('journeyPlan.date >= :startDate AND journeyPlan.date < :endDate', {
+      startDate: startOfDay,
+      endDate: endOfDay,
+    });
 
     // Get total count
     const total = await query.getCount();
