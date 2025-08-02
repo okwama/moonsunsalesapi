@@ -1,0 +1,16 @@
+export { SalesRep } from './sales-rep.entity';
+export { Clients } from './clients.entity';
+export { JourneyPlan } from './journey-plan.entity';
+export { LoginHistory } from './login-history.entity';
+export { UpliftSale } from './uplift-sale.entity';
+export { UpliftSaleItem } from './uplift-sale-item.entity';
+export { Task } from './task.entity';
+export { Leave } from './leave.entity';
+export { Store } from './store.entity';
+export { StoreInventory } from './store-inventory.entity';
+export { Category } from './category.entity';
+export { CategoryPriceOption } from './category-price-option.entity';
+export { ProductReport } from './product-report.entity';
+export { FeedbackReport } from './feedback-report.entity';
+export { VisibilityReport } from './visibility-report.entity';
+export { Target } from './target.entity';

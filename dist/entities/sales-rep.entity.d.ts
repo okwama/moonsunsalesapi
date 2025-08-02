@@ -1,0 +1,34 @@
+import { JourneyPlan } from './journey-plan.entity';
+import { LoginHistory } from './login-history.entity';
+export declare class SalesRep {
+    id: number;
+    name: string;
+    email: string;
+    phoneNumber: string;
+    password: string;
+    countryId: number;
+    country: string;
+    region_id: number;
+    region: string;
+    route_id: number;
+    route: string;
+    route_id_update: number;
+    route_name_update: string;
+    visits_targets: number;
+    new_clients: number;
+    vapes_targets: number;
+    pouches_targets: number;
+    role: string;
+    manager_type: number;
+    status: number;
+    createdAt: Date;
+    updatedAt: Date;
+    retail_manager: number;
+    key_channel_manager: number;
+    distribution_manager: number;
+    photoUrl: string;
+    managerId: number;
+    journeyPlans: JourneyPlan[];
+    LoginHistory: LoginHistory[];
+    validatePassword(password: string): Promise<boolean>;
+}

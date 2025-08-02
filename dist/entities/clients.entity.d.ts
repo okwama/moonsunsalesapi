@@ -1,0 +1,30 @@
+import { JourneyPlan } from './journey-plan.entity';
+import { UpliftSale } from './uplift-sale.entity';
+import { SalesRep } from './sales-rep.entity';
+export declare class Clients {
+    id: number;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    balance: number;
+    email: string;
+    region_id: number;
+    region: string;
+    route_id: number;
+    route_name: string;
+    route_id_update: number;
+    route_name_update: string;
+    contact: string;
+    tax_pin: string;
+    location: string;
+    status: number;
+    client_type: number;
+    outlet_account: number;
+    countryId: number;
+    added_by: number;
+    addedByUser: SalesRep;
+    created_at: Date;
+    journeyPlans: JourneyPlan[];
+    upliftSales: UpliftSale[];
+}

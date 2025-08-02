@@ -1,0 +1,209 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OrdersService = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const order_entity_1 = require("./entities/order.entity");
+const order_item_entity_1 = require("./entities/order-item.entity");
+let OrdersService = class OrdersService {
+    constructor(orderRepository, orderItemRepository, dataSource) {
+        this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.dataSource = dataSource;
+    }
+    async create(createOrderDto, salesrepId) {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            const soNumber = createOrderDto.soNumber || await this.generateSoNumber();
+            let subtotal = 0;
+            let taxAmount = 0;
+            let totalAmount = 0;
+            let netPrice = 0;
+            for (const item of createOrderDto.orderItems) {
+                const itemUnitPrice = item.unitPrice || 0;
+                const itemQuantity = item.quantity || 0;
+                const itemTotal = itemUnitPrice * itemQuantity;
+                const itemTax = item.taxAmount || (itemTotal * 0.16);
+                const itemNet = itemTotal + itemTax;
+                subtotal += itemTotal;
+                taxAmount += itemTax;
+                totalAmount += itemTotal;
+                netPrice += itemNet;
+            }
+            const orderData = {
+                soNumber: soNumber,
+                clientId: createOrderDto.clientId,
+                orderDate: createOrderDto.orderDate ? new Date(createOrderDto.orderDate) : new Date(),
+                expectedDeliveryDate: createOrderDto.expectedDeliveryDate ? new Date(createOrderDto.expectedDeliveryDate) : null,
+                subtotal: subtotal,
+                taxAmount: taxAmount,
+                totalAmount: totalAmount,
+                netPrice: netPrice,
+                notes: createOrderDto.comment || createOrderDto.notes,
+                createdBy: null,
+                salesrep: salesrepId,
+                riderId: createOrderDto.riderId,
+                status: createOrderDto.status || 'draft',
+                myStatus: createOrderDto.myStatus || 0,
+            };
+            const order = this.orderRepository.create(orderData);
+            const savedOrder = await queryRunner.manager.save(order);
+            for (const itemDto of createOrderDto.orderItems) {
+                const itemUnitPrice = itemDto.unitPrice || 0;
+                const itemQuantity = itemDto.quantity || 0;
+                const itemTotal = itemUnitPrice * itemQuantity;
+                const itemTax = itemDto.taxAmount || (itemTotal * 0.16);
+                const itemNet = itemTotal + itemTax;
+                const orderItemData = {
+                    salesOrderId: savedOrder.id,
+                    productId: itemDto.productId,
+                    quantity: itemQuantity,
+                    unitPrice: itemUnitPrice,
+                    taxAmount: itemTax,
+                    totalPrice: itemTotal,
+                    taxType: itemDto.taxType || 'vat_16',
+                    netPrice: itemNet,
+                    shippedQuantity: itemDto.shippedQuantity || 0,
+                };
+                const orderItem = this.orderItemRepository.create(orderItemData);
+                await queryRunner.manager.save(orderItem);
+            }
+            await queryRunner.commitTransaction();
+            return this.findOne(savedOrder.id);
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        }
+        finally {
+            await queryRunner.release();
+        }
+    }
+    async generateSoNumber() {
+        const latestOrder = await this.orderRepository
+            .createQueryBuilder('order')
+            .orderBy('order.id', 'DESC')
+            .getOne();
+        const currentYear = new Date().getFullYear();
+        let nextNumber = 1;
+        if (latestOrder && latestOrder.soNumber) {
+            const parts = latestOrder.soNumber.split('-');
+            if (parts.length >= 3) {
+                const lastNumber = parseInt(parts[2]);
+                if (!isNaN(lastNumber)) {
+                    nextNumber = lastNumber + 1;
+                }
+            }
+        }
+        return `SO-${currentYear}-${nextNumber.toString().padStart(4, '0')}`;
+    }
+    async findAll() {
+        return this.orderRepository.find({
+            relations: ['user', 'client', 'orderItems', 'orderItems.product'],
+        });
+    }
+    async findOne(id) {
+        return this.orderRepository.findOne({
+            where: { id },
+            relations: ['user', 'client', 'orderItems', 'orderItems.product'],
+        });
+    }
+    async update(id, updateOrderDto) {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            const existingOrder = await this.findOne(id);
+            if (!existingOrder) {
+                throw new Error('Order not found');
+            }
+            if (updateOrderDto.orderItems && updateOrderDto.orderItems.length > 0) {
+                await queryRunner.manager.delete(order_item_entity_1.OrderItem, { salesOrderId: id });
+                let subtotal = 0;
+                let taxAmount = 0;
+                let totalAmount = 0;
+                let netPrice = 0;
+                for (const itemDto of updateOrderDto.orderItems) {
+                    const itemUnitPrice = itemDto.unitPrice || 0;
+                    const itemQuantity = itemDto.quantity || 0;
+                    const itemTotal = itemUnitPrice * itemQuantity;
+                    const itemTax = itemDto.taxAmount || (itemTotal * 0.16);
+                    const itemNet = itemTotal + itemTax;
+                    const orderItemData = {
+                        salesOrderId: id,
+                        productId: itemDto.productId,
+                        quantity: itemQuantity,
+                        unitPrice: itemUnitPrice,
+                        taxAmount: itemTax,
+                        totalPrice: itemTotal,
+                        taxType: itemDto.taxType || 'vat_16',
+                        netPrice: itemNet,
+                        shippedQuantity: itemDto.shippedQuantity || 0,
+                    };
+                    const orderItem = this.orderItemRepository.create(orderItemData);
+                    await queryRunner.manager.save(orderItem);
+                    subtotal += itemTotal;
+                    taxAmount += itemTax;
+                    totalAmount += itemTotal;
+                    netPrice += itemNet;
+                }
+                await queryRunner.manager.update(order_entity_1.Order, id, {
+                    subtotal: subtotal,
+                    taxAmount: taxAmount,
+                    totalAmount: totalAmount,
+                    netPrice: netPrice,
+                    notes: updateOrderDto.comment || updateOrderDto.notes,
+                });
+            }
+            else {
+                const updateData = {};
+                if (updateOrderDto.comment !== undefined)
+                    updateData.notes = updateOrderDto.comment;
+                if (updateOrderDto.notes !== undefined)
+                    updateData.notes = updateOrderDto.notes;
+                if (updateOrderDto.status !== undefined)
+                    updateData.status = updateOrderDto.status;
+                if (Object.keys(updateData).length > 0) {
+                    await queryRunner.manager.update(order_entity_1.Order, id, updateData);
+                }
+            }
+            await queryRunner.commitTransaction();
+            return this.findOne(id);
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        }
+        finally {
+            await queryRunner.release();
+        }
+    }
+    async remove(id) {
+        await this.orderRepository.delete(id);
+    }
+};
+exports.OrdersService = OrdersService;
+exports.OrdersService = OrdersService = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(order_entity_1.Order)),
+    __param(1, (0, typeorm_1.InjectRepository)(order_item_entity_1.OrderItem)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.DataSource])
+], OrdersService);
+//# sourceMappingURL=orders.service.js.map

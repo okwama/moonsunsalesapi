@@ -1,0 +1,75 @@
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
+import { SalesRep } from '../entities/sales-rep.entity';
+import { Clients } from '../entities/clients.entity';
+import { Product } from '../products/entities/product.entity';
+import { JourneyPlan } from '../journey-plans/entities/journey-plan.entity';
+import { LoginHistory } from '../entities/login-history.entity';
+import { UpliftSale } from '../entities/uplift-sale.entity';
+import { UpliftSaleItem } from '../entities/uplift-sale-item.entity';
+import { Task } from '../entities/task.entity';
+import { Leave } from '../entities/leave.entity';
+import { Store } from '../entities/store.entity';
+import { StoreInventory } from '../entities/store-inventory.entity';
+import { Category } from '../entities/category.entity';
+import { CategoryPriceOption } from '../entities/category-price-option.entity';
+import { Order } from '../orders/entities/order.entity';
+import { OrderItem } from '../orders/entities/order-item.entity';
+import { Users } from '../users/entities/users.entity';
+import { Notice } from '../notices/entities/notice.entity';
+import { LeaveType } from '../entities/leave-type.entity';
+import { FeedbackReport } from '../entities/feedback-report.entity';
+import { ProductReport } from '../entities/product-report.entity';
+import { VisibilityReport } from '../entities/visibility-report.entity';
+
+export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOptions => {
+  const useLocalDb = configService.get<string>('USE_LOCAL_DB', 'false') === 'true';
+
+  if (useLocalDb) {
+    console.log('🔧 Using local SQLite database for development');
+    return {
+      type: 'sqlite',
+      database: './woosh-dev.db',
+      entities: [
+        SalesRep, Clients, Product, JourneyPlan, LoginHistory, UpliftSale, UpliftSaleItem,
+        Task, Leave, Store, StoreInventory, Category, CategoryPriceOption, Order, OrderItem, Users, Notice, LeaveType,
+        FeedbackReport, ProductReport, VisibilityReport,
+      ],
+      synchronize: true,
+      logging: true,
+    };
+  }
+
+  return {
+    type: 'mysql',
+    host: configService.get<string>('DB_HOST', 'localhost'),
+    port: configService.get<number>('DB_PORT', 3306),
+    username: configService.get<string>('DB_USERNAME', 'root'),
+    password: configService.get<string>('DB_PASSWORD', ''),
+    database: configService.get<string>('DB_DATABASE', 'citlogis_ws'),
+    entities: [
+      SalesRep, Clients, Product, JourneyPlan, LoginHistory, UpliftSale, UpliftSaleItem,
+      Task, Leave, Store, StoreInventory, Category, CategoryPriceOption, Order, OrderItem, Users, Notice, LeaveType,
+      FeedbackReport, ProductReport, VisibilityReport,
+    ],
+    synchronize: false,
+    logging: configService.get<boolean>('DB_LOGGING', false),
+    charset: 'utf8mb4',
+    ssl: configService.get<boolean>('DB_SSL', false),
+    extra: {
+      connectionLimit: 10, // Reduced from 20 to prevent too many connections
+      charset: 'utf8mb4',
+      multipleStatements: true,
+      dateStrings: true,
+      acquireTimeout: 120000,
+      timeout: 60000,
+      reconnect: true,
+    },
+    retryAttempts: 3, // Reduced from 5
+    retryDelay: 1000, // Reduced from 2000
+    connectTimeout: 30000, // Reduced from 60000
+    acquireTimeout: 60000, // Reduced from 120000
+    keepConnectionAlive: true,
+    autoLoadEntities: true,
+  };
+}; 

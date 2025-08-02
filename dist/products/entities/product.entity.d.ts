@@ -1,0 +1,26 @@
+import { UpliftSaleItem } from '../../entities/uplift-sale-item.entity';
+import { StoreInventory } from '../../entities/store-inventory.entity';
+import { Category } from '../../entities/category.entity';
+import { CategoryPriceOption } from '../../entities/category-price-option.entity';
+export declare class Product {
+    id: number;
+    productCode: string;
+    productName: string;
+    description: string;
+    categoryId: number;
+    category: string;
+    unitOfMeasure: string;
+    costPrice: number;
+    sellingPrice: number;
+    taxType: string;
+    reorderLevel: number;
+    currentStock: number;
+    isActive: boolean;
+    imageUrl: string;
+    createdAt: Date;
+    updatedAt: Date;
+    upliftSaleItems: UpliftSaleItem[];
+    storeInventory: StoreInventory[];
+    categoryEntity: Category;
+    get categoryPriceOptions(): CategoryPriceOption[];
+}
