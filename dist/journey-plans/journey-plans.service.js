@@ -52,14 +52,16 @@ let JourneyPlansService = class JourneyPlansService {
             const statusValue = statusMap[status] ?? 0;
             query = query.andWhere('journeyPlan.status = :status', { status: statusValue });
         }
-        const targetDate = date || new Date().toISOString().split('T')[0];
-        const startOfDay = new Date(targetDate);
-        const endOfDay = new Date(targetDate);
-        endOfDay.setDate(endOfDay.getDate() + 1);
-        query = query.andWhere('journeyPlan.date >= :startDate AND journeyPlan.date < :endDate', {
-            startDate: startOfDay,
-            endDate: endOfDay,
-        });
+        if (date) {
+            const targetDate = new Date(date);
+            const startOfDay = new Date(targetDate);
+            const endOfDay = new Date(targetDate);
+            endOfDay.setDate(endOfDay.getDate() + 1);
+            query = query.andWhere('journeyPlan.date >= :startDate AND journeyPlan.date < :endDate', {
+                startDate: startOfDay,
+                endDate: endOfDay,
+            });
+        }
         const total = await query.getCount();
         const data = await query
             .orderBy('journeyPlan.date', 'DESC')
