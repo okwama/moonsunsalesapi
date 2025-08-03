@@ -51,19 +51,15 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
         charset: 'utf8mb4',
         multipleStatements: true,
         dateStrings: true,
-        acquireTimeout: 120000,
         reconnect: true,
       },
       retryAttempts: 3,
       retryDelay: 1000,
       connectTimeout: 30000,
-      acquireTimeout: 60000,
       keepConnectionAlive: true,
       autoLoadEntities: true,
     };
   }
-
-
 
   // Development with MySQL
   console.log('🔧 Development environment - using MySQL database');
@@ -88,13 +84,11 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
       charset: 'utf8mb4',
       multipleStatements: true,
       dateStrings: true,
-      acquireTimeout: 120000,
       reconnect: true,
     },
     retryAttempts: 3,
     retryDelay: 1000,
     connectTimeout: 30000,
-    acquireTimeout: 60000,
     keepConnectionAlive: true,
     autoLoadEntities: true,
   };
