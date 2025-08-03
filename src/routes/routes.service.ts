@@ -10,42 +10,61 @@ export class RoutesService {
     private routeRepository: Repository<Route>,
   ) {}
 
-  async findAll(): Promise<Route[]> {
+  async findAll(userCountryId: number): Promise<Route[]> {
     return this.routeRepository.find({
+      where: { country_id: userCountryId }, // Only routes in user's country
       order: {
         name: 'ASC',
       },
     });
   }
 
-  async findOne(id: number): Promise<Route | null> {
-    return this.routeRepository.findOne({ where: { id } });
+  async findOne(id: number, userCountryId: number): Promise<Route | null> {
+    return this.routeRepository.findOne({ 
+      where: { 
+        id,
+        country_id: userCountryId, // Only routes in user's country
+      }
+    });
   }
 
-  async findByRegion(regionId: number): Promise<Route[]> {
+  async findByRegion(regionId: number, userCountryId: number): Promise<Route[]> {
     return this.routeRepository.find({
-      where: { region: regionId },
+      where: { 
+        region: regionId,
+        country_id: userCountryId, // Only routes in user's country
+      },
       order: { name: 'ASC' },
     });
   }
 
-  async findByCountry(countryId: number): Promise<Route[]> {
+  async findByCountry(countryId: number, userCountryId: number): Promise<Route[]> {
+    // Ensure user can only access routes from their own country
+    if (countryId !== userCountryId) {
+      return [];
+    }
     return this.routeRepository.find({
-      where: { country_id: countryId },
+      where: { country_id: userCountryId },
       order: { name: 'ASC' },
     });
   }
 
-  async findActive(): Promise<Route[]> {
+  async findActive(userCountryId: number): Promise<Route[]> {
     return this.routeRepository.find({
-      where: { status: 1 },
+      where: { 
+        status: 1,
+        country_id: userCountryId, // Only active routes in user's country
+      },
       order: { name: 'ASC' },
     });
   }
 
-  async findByLeader(leaderId: number): Promise<Route[]> {
+  async findByLeader(leaderId: number, userCountryId: number): Promise<Route[]> {
     return this.routeRepository.find({
-      where: { leader_id: leaderId },
+      where: { 
+        leader_id: leaderId,
+        country_id: userCountryId, // Only routes in user's country
+      },
       order: { name: 'ASC' },
     });
   }

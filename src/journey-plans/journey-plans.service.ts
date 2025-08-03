@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, DataSource } from 'typeorm';
 import { JourneyPlan } from './entities/journey-plan.entity';
+import { Clients } from '../entities/clients.entity';
+import { SalesRep } from '../entities/sales-rep.entity';
 import { CreateJourneyPlanDto } from './dto/create-journey-plan.dto';
 import { UpdateJourneyPlanDto } from './dto/update-journey-plan.dto';
 
@@ -29,10 +31,18 @@ export class JourneyPlansService {
   constructor(
     @InjectRepository(JourneyPlan)
     private journeyPlanRepository: Repository<JourneyPlan>,
+    @InjectRepository(Clients)
+    private clientsRepository: Repository<Clients>,
+    @InjectRepository(SalesRep)
+    private salesRepRepository: Repository<SalesRep>,
     private dataSource: DataSource,
   ) {}
 
   async create(createJourneyPlanDto: CreateJourneyPlanDto, userId?: number): Promise<JourneyPlan> {
+    console.log('🚀 Creating new journey plan...');
+    console.log('📊 Journey plan data:', createJourneyPlanDto);
+    console.log('👤 User ID:', userId);
+
     const journeyPlan = this.journeyPlanRepository.create({
       ...createJourneyPlanDto,
       userId: userId,
@@ -41,7 +51,48 @@ export class JourneyPlansService {
     });
     
     const saved = await this.journeyPlanRepository.save(journeyPlan);
+    console.log('✅ Journey plan created with ID:', saved.id);
+    console.log('🏪 Client ID:', saved.clientId);
+    
+    // Update client's route to match sales rep's route
+    if (userId && saved.clientId) {
+      console.log('🔄 Updating client route to match sales rep route...');
+      await this.updateClientRoute(saved.clientId, userId);
+    } else {
+      console.log('⚠️ Skipping client route update - missing userId or clientId');
+    }
+    
     return this.findOne(saved.id);
+  }
+
+  // Update client's route to match sales rep's route
+  private async updateClientRoute(clientId: number, salesRepId: number): Promise<void> {
+    try {
+      // Get sales rep's route information
+      const salesRep = await this.salesRepRepository.findOne({
+        where: { id: salesRepId },
+        select: ['route_id', 'route']
+      });
+
+      if (!salesRep) {
+        console.log(`⚠️ SalesRep with ID ${salesRepId} not found`);
+        return;
+      }
+
+      // Update client's route to match sales rep's route
+      await this.clientsRepository.update(clientId, {
+        route_id: salesRep.route_id,
+        route_name: salesRep.route,
+        route_id_update: salesRep.route_id,
+        route_name_update: salesRep.route,
+      });
+
+      console.log(`✅ Updated client ${clientId} route to match sales rep ${salesRepId}`);
+      console.log(`   - New route_id: ${salesRep.route_id}`);
+      console.log(`   - New route_name: ${salesRep.route}`);
+    } catch (error) {
+      console.error(`❌ Error updating client route: ${error}`);
+    }
   }
 
   // Stored Procedure Method
