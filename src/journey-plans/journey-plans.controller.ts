@@ -28,7 +28,7 @@ export class JourneyPlansController {
     @Query('date') date?: string,
   ) {
     const userId = (req.user as any)?.id;
-    return this.journeyPlansService.findAll({
+    return this.journeyPlansService.findAllWithProcedure({
       page: parseInt(page),
       limit: parseInt(limit),
       status,

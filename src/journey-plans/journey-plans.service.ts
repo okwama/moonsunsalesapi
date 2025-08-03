@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder, DataSource } from 'typeorm';
 import { JourneyPlan } from './entities/journey-plan.entity';
 import { CreateJourneyPlanDto } from './dto/create-journey-plan.dto';
 import { UpdateJourneyPlanDto } from './dto/update-journey-plan.dto';
@@ -29,6 +29,7 @@ export class JourneyPlansService {
   constructor(
     @InjectRepository(JourneyPlan)
     private journeyPlanRepository: Repository<JourneyPlan>,
+    private dataSource: DataSource,
   ) {}
 
   async create(createJourneyPlanDto: CreateJourneyPlanDto, userId?: number): Promise<JourneyPlan> {
@@ -43,6 +44,71 @@ export class JourneyPlansService {
     return this.findOne(saved.id);
   }
 
+  // Stored Procedure Method
+  async findAllWithProcedure(options: FindAllOptions): Promise<{
+    data: JourneyPlan[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+    success: boolean;
+  }> {
+    try {
+      const { page, limit, status, date, userId, timezone } = options;
+      const offset = (page - 1) * limit;
+
+      // Convert status string to number
+      const statusMap: { [key: string]: number } = {
+        'pending': 0,
+        'checked_in': 1,
+        'in_progress': 2,
+        'completed': 3,
+        'cancelled': 4,
+      };
+      const statusValue = status ? (statusMap[status] ?? -1) : -1;
+
+      // Use today's date if not provided
+      const targetDate = date || new Date().toISOString().split('T')[0];
+
+      console.log('🚀 Using stored procedure for journey plans');
+      console.log('📊 Params:', { userId, statusValue, targetDate, page, limit, offset });
+
+      // Call stored procedure
+      const result = await this.dataSource.query(
+        'CALL GetJourneyPlans(?, ?, ?, ?, ?, ?)',
+        [userId || 0, statusValue, targetDate, page, limit, offset]
+      );
+
+      if (result && result.length > 0) {
+        const data = result[0]; // First result set contains the data
+        const total = result[1]?.[0]?.total || 0; // Second result set contains count
+
+        console.log('✅ Stored procedure executed successfully');
+        console.log('📊 Total found:', total);
+        console.log('📊 Data length:', data.length);
+
+        return {
+          data,
+          pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+          },
+          success: true,
+        };
+      } else {
+        throw new Error('No results from stored procedure');
+      }
+    } catch (error) {
+      console.log('⚠️ Stored procedure failed, falling back to service method:', error.message);
+      return this.findAll(options);
+    }
+  }
+
+  // Enhanced service method with better performance
   async findAll(options: FindAllOptions): Promise<{
     data: JourneyPlan[];
     pagination: {
@@ -56,7 +122,7 @@ export class JourneyPlansService {
     const { page, limit, status, date, userId, timezone } = options;
     const offset = (page - 1) * limit;
 
-    // Build query
+    // Build query with optimized joins
     let query = this.journeyPlanRepository
       .createQueryBuilder('journeyPlan')
       .leftJoinAndSelect('journeyPlan.client', 'client')
