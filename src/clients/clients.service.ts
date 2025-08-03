@@ -14,9 +14,11 @@ export class ClientsService {
 
   async create(createClientDto: CreateClientDto, userCountryId: number): Promise<Clients> {
     // Ensure the client is created in the user's country
+    // New clients are created with status 0 (pending approval)
     const clientData = {
       ...createClientDto,
       countryId: userCountryId,
+      status: 0, // Pending approval - admin will change to 1 when approved
     };
     
     const client = this.clientRepository.create(clientData);
@@ -26,7 +28,7 @@ export class ClientsService {
   async findAll(userCountryId: number): Promise<Clients[]> {
     return this.clientRepository.find({
       where: { 
-        status: 0, // Active clients only
+        status: 1, // Only approved/active clients
         countryId: userCountryId, // Only clients in user's country
       },
       select: [
@@ -46,7 +48,7 @@ export class ClientsService {
     return this.clientRepository.findOne({
       where: { 
         id, 
-        status: 1,
+        status: 1, // Only approved/active clients
         countryId: userCountryId, // Only clients in user's country
       },
     });
@@ -56,7 +58,7 @@ export class ClientsService {
     return this.clientRepository.findOne({
       where: { 
         id, 
-        status: 1,
+        status: 1, // Only approved/active clients
         countryId: userCountryId,
       },
       select: [
@@ -222,5 +224,67 @@ export class ClientsService {
       inactive,
       activePercentage: total > 0 ? Math.round((active / total) * 100) : 0,
     };
+  }
+
+  // Get pending clients for admin approval
+  async findPendingClients(userCountryId: number): Promise<Clients[]> {
+    return this.clientRepository.find({
+      where: { 
+        status: 0, // Pending approval clients
+        countryId: userCountryId, // Only clients in user's country
+      },
+      select: [
+        'id',
+        'name', 
+        'contact',
+        'region',
+        'region_id',
+        'status',
+        'countryId',
+        'email',
+        'address',
+        'created_at',
+        'added_by'
+      ],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  // Approve a client (admin only)
+  async approveClient(id: number, userCountryId: number): Promise<Clients | null> {
+    // First check if client exists and belongs to user's country
+    const existingClient = await this.clientRepository.findOne({
+      where: { 
+        id, 
+        status: 0, // Only pending clients can be approved
+        countryId: userCountryId,
+      },
+    });
+    
+    if (!existingClient) {
+      return null;
+    }
+    
+    await this.clientRepository.update(id, { status: 1 });
+    return this.findOne(id, userCountryId);
+  }
+
+  // Reject a client (admin only)
+  async rejectClient(id: number, userCountryId: number): Promise<boolean> {
+    // First check if client exists and belongs to user's country
+    const existingClient = await this.clientRepository.findOne({
+      where: { 
+        id, 
+        status: 0, // Only pending clients can be rejected
+        countryId: userCountryId,
+      },
+    });
+    
+    if (!existingClient) {
+      return false;
+    }
+    
+    await this.clientRepository.update(id, { status: 2 }); // 2 = rejected
+    return true;
   }
 } 
