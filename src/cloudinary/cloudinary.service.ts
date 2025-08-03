@@ -71,4 +71,32 @@ export class CloudinaryService {
       throw error;
     }
   }
+
+  async uploadFile(file: Express.Multer.File) {
+    try {
+      // Convert file buffer to base64
+      const base64Data = file.buffer.toString('base64');
+      const dataURI = `data:${file.mimetype};base64,${base64Data}`;
+
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: 'whoosh/payments',
+        resource_type: 'auto',
+        use_filename: true,
+        unique_filename: true,
+      });
+
+      this.logger.log(`✅ Payment file uploaded to Cloudinary: ${result.secure_url}`);
+
+      return {
+        secure_url: result.secure_url,
+        public_id: result.public_id,
+        original_filename: result.original_filename,
+        format: result.format,
+        size: result.bytes,
+      };
+    } catch (error) {
+      this.logger.error('❌ Payment file upload error:', error);
+      throw error;
+    }
+  }
 } 

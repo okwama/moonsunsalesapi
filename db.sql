@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Aug 03, 2025 at 11:39 AM
+-- Generation Time: Aug 03, 2025 at 01:18 PM
 -- Server version: 10.6.22-MariaDB-cll-lve
 -- PHP Version: 8.3.23
 
@@ -1204,6 +1204,23 @@ CREATE TABLE `routes` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `salesclient_payment`
+--
+
+CREATE TABLE `salesclient_payment` (
+  `id` int(11) NOT NULL,
+  `clientId` int(11) NOT NULL,
+  `amount` double NOT NULL,
+  `invoicefileUrl` varchar(191) DEFAULT NULL,
+  `date` datetime(3) NOT NULL DEFAULT current_timestamp(3),
+  `status` varchar(191) DEFAULT NULL,
+  `payment_method` varchar(191) DEFAULT NULL,
+  `salesrepId` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `SalesRep`
 --
 
@@ -2137,6 +2154,14 @@ ALTER TABLE `routes`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `salesclient_payment`
+--
+ALTER TABLE `salesclient_payment`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `ClientPayment_clientId_fkey` (`clientId`),
+  ADD KEY `ClientPayment_userId_fkey` (`salesrepId`);
+
+--
 -- Indexes for table `SalesRep`
 --
 ALTER TABLE `SalesRep`
@@ -2701,6 +2726,12 @@ ALTER TABLE `routes`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `salesclient_payment`
+--
+ALTER TABLE `salesclient_payment`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `SalesRep`
 --
 ALTER TABLE `SalesRep`
@@ -3090,6 +3121,13 @@ ALTER TABLE `receipts`
 --
 ALTER TABLE `retail_targets`
   ADD CONSTRAINT `retail_targets_ibfk_1` FOREIGN KEY (`sales_rep_id`) REFERENCES `SalesRep` (`id`);
+
+--
+-- Constraints for table `salesclient_payment`
+--
+ALTER TABLE `salesclient_payment`
+  ADD CONSTRAINT `clientrel` FOREIGN KEY (`clientId`) REFERENCES `Clients` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `salesrep_id` FOREIGN KEY (`salesrepId`) REFERENCES `SalesRep` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `sales_orders`

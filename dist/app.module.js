@@ -34,6 +34,7 @@ const clock_in_out_module_1 = require("./clock-in-out/clock-in-out.module");
 const reports_module_1 = require("./reports/reports.module");
 const routes_module_1 = require("./routes/routes.module");
 const version_module_1 = require("./version/version.module");
+const payments_module_1 = require("./payments/payments.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -78,6 +79,7 @@ exports.AppModule = AppModule = __decorate([
             reports_module_1.ReportsModule,
             routes_module_1.RoutesModule,
             version_module_1.VersionModule,
+            payments_module_1.PaymentsModule,
         ],
         providers: [database_health_service_1.DatabaseHealthService],
     })

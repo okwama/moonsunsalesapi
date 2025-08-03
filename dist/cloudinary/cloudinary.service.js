@@ -68,6 +68,30 @@ let CloudinaryService = CloudinaryService_1 = class CloudinaryService {
             throw error;
         }
     }
+    async uploadFile(file) {
+        try {
+            const base64Data = file.buffer.toString('base64');
+            const dataURI = `data:${file.mimetype};base64,${base64Data}`;
+            const result = await cloudinary_1.v2.uploader.upload(dataURI, {
+                folder: 'whoosh/payments',
+                resource_type: 'auto',
+                use_filename: true,
+                unique_filename: true,
+            });
+            this.logger.log(`✅ Payment file uploaded to Cloudinary: ${result.secure_url}`);
+            return {
+                secure_url: result.secure_url,
+                public_id: result.public_id,
+                original_filename: result.original_filename,
+                format: result.format,
+                size: result.bytes,
+            };
+        }
+        catch (error) {
+            this.logger.error('❌ Payment file upload error:', error);
+            throw error;
+        }
+    }
 };
 exports.CloudinaryService = CloudinaryService;
 exports.CloudinaryService = CloudinaryService = CloudinaryService_1 = __decorate([

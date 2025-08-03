@@ -15,3 +15,4 @@ export { FeedbackReport } from './feedback-report.entity';
 export { VisibilityReport } from './visibility-report.entity';
 export { Target } from './target.entity';
 export { Upload } from './upload.entity';
+export { SalesClientPayment } from './sales-client-payment.entity';

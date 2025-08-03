@@ -26,6 +26,7 @@ import { ClockInOutModule } from './clock-in-out/clock-in-out.module';
 import { ReportsModule } from './reports/reports.module';
 import { RoutesModule } from './routes/routes.module';
 import { VersionModule } from './version/version.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { VersionModule } from './version/version.module';
     ReportsModule,
     RoutesModule,
     VersionModule,
+    PaymentsModule,
   ],
   providers: [DatabaseHealthService],
 })

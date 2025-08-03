@@ -12,4 +12,11 @@ export declare class CloudinaryService {
         resource_type: "auto" | "image" | "video" | "raw";
     }>;
     deleteFromCloudinary(publicId: string, resourceType?: string): Promise<any>;
+    uploadFile(file: Express.Multer.File): Promise<{
+        secure_url: string;
+        public_id: string;
+        original_filename: string;
+        format: string;
+        size: number;
+    }>;
 }
