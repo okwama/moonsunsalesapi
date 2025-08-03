@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const journey_plans_controller_1 = require("./journey-plans.controller");
 const journey_plans_service_1 = require("./journey-plans.service");
-const journey_plan_entity_1 = require("../entities/journey-plan.entity");
+const journey_plan_entity_1 = require("./entities/journey-plan.entity");
 let JourneyPlansModule = class JourneyPlansModule {
 };
 exports.JourneyPlansModule = JourneyPlansModule;

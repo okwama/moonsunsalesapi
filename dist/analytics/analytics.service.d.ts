@@ -1,6 +1,6 @@
 import { Repository } from 'typeorm';
 import { LoginHistory } from '../entities/login-history.entity';
-import { JourneyPlan } from '../entities/journey-plan.entity';
+import { JourneyPlan } from '../journey-plans/entities/journey-plan.entity';
 import { UpliftSale } from '../entities/uplift-sale.entity';
 import { ProductReport } from '../entities/product-report.entity';
 import { FeedbackReport } from '../entities/feedback-report.entity';

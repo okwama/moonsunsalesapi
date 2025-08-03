@@ -120,6 +120,26 @@ let LeaveService = class LeaveService {
         }
         return balance;
     }
+    async ensureLeaveTypeExists(leaveTypeName) {
+        try {
+            const existingType = await this.leaveTypeRepository.findOne({
+                where: { name: leaveTypeName }
+            });
+            if (!existingType) {
+                const newLeaveType = this.leaveTypeRepository.create({
+                    name: leaveTypeName,
+                    description: `${leaveTypeName} leave type`,
+                    default_days: 5,
+                    is_active: true,
+                });
+                await this.leaveTypeRepository.save(newLeaveType);
+                console.log(`Created leave type: ${leaveTypeName}`);
+            }
+        }
+        catch (error) {
+            console.error('Error ensuring leave type exists:', error);
+        }
+    }
 };
 exports.LeaveService = LeaveService;
 exports.LeaveService = LeaveService = __decorate([

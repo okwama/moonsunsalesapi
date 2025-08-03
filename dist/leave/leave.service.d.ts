@@ -15,4 +15,5 @@ export declare class LeaveService {
     remove(id: number): Promise<void>;
     getLeaveTypes(): Promise<LeaveType[]>;
     getLeaveBalance(userId: number): Promise<any>;
+    ensureLeaveTypeExists(leaveTypeName: string): Promise<void>;
 }

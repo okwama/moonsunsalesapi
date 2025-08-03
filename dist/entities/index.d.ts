@@ -1,6 +1,6 @@
 export { SalesRep } from './sales-rep.entity';
 export { Clients } from './clients.entity';
-export { JourneyPlan } from './journey-plan.entity';
+export { JourneyPlan } from '../journey-plans/entities/journey-plan.entity';
 export { LoginHistory } from './login-history.entity';
 export { UpliftSale } from './uplift-sale.entity';
 export { UpliftSaleItem } from './uplift-sale-item.entity';

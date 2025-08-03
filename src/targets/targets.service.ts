@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { JourneyPlan } from '../entities/journey-plan.entity';
+import { JourneyPlan } from '../journey-plans/entities/journey-plan.entity';
 import { SalesRep } from '../entities/sales-rep.entity';
 import { Clients } from '../entities/clients.entity';
 import { UpliftSale } from '../entities/uplift-sale.entity';

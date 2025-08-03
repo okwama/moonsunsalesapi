@@ -11,7 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SalesRep = void 0;
 const typeorm_1 = require("typeorm");
-const journey_plan_entity_1 = require("./journey-plan.entity");
+const journey_plan_entity_1 = require("../journey-plans/entities/journey-plan.entity");
 const login_history_entity_1 = require("./login-history.entity");
 const bcrypt = require("bcryptjs");
 let SalesRep = class SalesRep {

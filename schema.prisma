@@ -36,7 +36,6 @@ model SalesRep {
   distribution_manager          Int
   photoUrl                      String?                         @default("")
   managerId                     Int?
-  JourneyPlanss                 JourneyPlanss[]
   LoginHistory                  LoginHistory[]
   UpliftSale                    UpliftSale[]
   distributors_targets          distributors_targets[]
@@ -155,7 +154,6 @@ model Clients {
   countryId         Int
   added_by          Int?
   created_at        DateTime?       @default(now())
-  JourneyPlanss     JourneyPlanss[]
   UpliftSale        UpliftSale[]
   client_ledger     client_ledger[]
   receipts          receipts[]
@@ -972,7 +970,7 @@ model products {
   is_active              Boolean?                 @default(true)
   created_at             DateTime                 @default(now()) @db.Timestamp(0)
   updated_at             DateTime                 @default(now()) @db.Timestamp(0)
-  image_url              String                   @db.VarChar(200)
+  image_url              String?                  @db.VarChar(200)
   UpliftSaleItem         UpliftSaleItem[]
   faulty_products_items  faulty_products_items[]
   inventory_receipts     inventory_receipts[]
@@ -1424,31 +1422,6 @@ model UpliftSaleItem {
   @@index([upliftSaleId], map: "UpliftSaleItem_upliftSaleId_fkey")
 }
 
-model JourneyPlanss {
-  id                 Int       @id @default(autoincrement())
-  date               DateTime
-  time               String
-  userId             Int?
-  clientId           Int?
-  status             Int       @default(0)
-  checkInTime        DateTime?
-  latitude           Float?
-  longitude          Float?
-  imageUrl           String?
-  notes              String?
-  checkoutLatitude   Float?
-  checkoutLongitude  Float?
-  checkoutTime       DateTime?
-  showUpdateLocation Boolean   @default(true)
-  routeId            Int?
-  Clients            Clients?  @relation(fields: [clientId], references: [id], onDelete: Cascade, map: "client_id")
-  SalesRep           SalesRep? @relation(fields: [userId], references: [id], onDelete: Cascade, map: "salesrep_id")
-
-  @@index([clientId], map: "JourneyPlan_clientId_idx")
-  @@index([routeId], map: "JourneyPlan_routeId_fkey")
-  @@index([userId], map: "JourneyPlan_userId_idx")
-}
-
 model targets {
   id           Int      @id @default(autoincrement())
   salesRepId   Int
@@ -1468,6 +1441,17 @@ model targets {
   @@index([status], map: "idx_status")
   @@index([targetMonth], map: "idx_targetMonth")
   @@index([targetType], map: "idx_targetType")
+}
+
+model versions {
+  id                   Int      @id @default(autoincrement())
+  version              String   @db.VarChar(20)
+  build_number         Int
+  min_required_version String?  @default("1.0.0") @db.VarChar(20)
+  force_update         Boolean? @default(false)
+  update_message       String?  @db.Text
+  is_active            Boolean? @default(true)
+  created_at           DateTime @default(now()) @db.Timestamp(0)
 }
 
 enum chart_of_accounts1_account_type {

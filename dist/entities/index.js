@@ -5,7 +5,7 @@ var sales_rep_entity_1 = require("./sales-rep.entity");
 Object.defineProperty(exports, "SalesRep", { enumerable: true, get: function () { return sales_rep_entity_1.SalesRep; } });
 var clients_entity_1 = require("./clients.entity");
 Object.defineProperty(exports, "Clients", { enumerable: true, get: function () { return clients_entity_1.Clients; } });
-var journey_plan_entity_1 = require("./journey-plan.entity");
+var journey_plan_entity_1 = require("../journey-plans/entities/journey-plan.entity");
 Object.defineProperty(exports, "JourneyPlan", { enumerable: true, get: function () { return journey_plan_entity_1.JourneyPlan; } });
 var login_history_entity_1 = require("./login-history.entity");
 Object.defineProperty(exports, "LoginHistory", { enumerable: true, get: function () { return login_history_entity_1.LoginHistory; } });

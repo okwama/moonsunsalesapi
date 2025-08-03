@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { JourneyPlan } from '../entities/journey-plan.entity';
+import { JourneyPlan } from './entities/journey-plan.entity';
 import { CreateJourneyPlanDto } from './dto/create-journey-plan.dto';
 import { UpdateJourneyPlanDto } from './dto/update-journey-plan.dto';
 interface FindAllOptions {

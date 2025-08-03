@@ -1,4 +1,4 @@
-import { JourneyPlan } from './journey-plan.entity';
+import { JourneyPlan } from '../journey-plans/entities/journey-plan.entity';
 import { LoginHistory } from './login-history.entity';
 export declare class SalesRep {
     id: number;

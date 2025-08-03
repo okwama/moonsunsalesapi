@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { JourneyPlan } from './journey-plan.entity';
+import { JourneyPlan } from '../journey-plans/entities/journey-plan.entity';
 import { LoginHistory } from './login-history.entity';
 import * as bcrypt from 'bcryptjs';
 
