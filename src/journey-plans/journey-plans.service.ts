@@ -82,8 +82,34 @@ export class JourneyPlansService {
       );
 
       if (result && result.length > 0) {
-        const data = result[0]; // First result set contains the data
+        const rawData = result[0]; // First result set contains the data
         const total = result[1]?.[0]?.total || 0; // Second result set contains count
+
+        // Transform flat fields back to nested objects
+        const data = rawData.map((row: any) => {
+          const journeyPlan: any = {};
+          const client: any = {};
+          const user: any = {};
+
+          // Extract journey plan fields
+          Object.keys(row).forEach(key => {
+            if (key.startsWith('client.')) {
+              const clientKey = key.replace('client.', '');
+              client[clientKey] = row[key];
+            } else if (key.startsWith('user.')) {
+              const userKey = key.replace('user.', '');
+              user[userKey] = row[key];
+            } else {
+              journeyPlan[key] = row[key];
+            }
+          });
+
+          return {
+            ...journeyPlan,
+            client,
+            user,
+          };
+        });
 
         console.log('✅ Stored procedure executed successfully');
         console.log('📊 Total found:', total);
