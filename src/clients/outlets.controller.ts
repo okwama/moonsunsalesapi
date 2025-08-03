@@ -54,7 +54,6 @@ export class OutletsController {
       outletAccount: client.outlet_account,
       balance: client.balance,
       createdAt: client.created_at,
-      updatedAt: client.updated_at,
     };
   }
 } 
