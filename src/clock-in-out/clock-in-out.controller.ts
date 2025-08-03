@@ -49,7 +49,7 @@ export class ClockInOutController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return await this.clockInOutService.getClockHistory(
+    return await this.clockInOutService.getClockSessionsWithProcedure(
       parseInt(userId),
       startDate,
       endDate,

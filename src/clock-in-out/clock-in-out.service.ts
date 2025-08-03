@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { LoginHistory } from '../entities/login-history.entity';
 import { ClockInDto, ClockOutDto } from './dto';
 
@@ -11,6 +11,7 @@ export class ClockInOutService {
   constructor(
     @InjectRepository(LoginHistory)
     private loginHistoryRepository: Repository<LoginHistory>,
+    private dataSource: DataSource,
   ) {}
 
   /**
@@ -230,6 +231,47 @@ export class ClockInOutService {
       this.logger.error(`❌ Get clock history failed for user ${userId}: ${error.message}`);
       return { sessions: [] };
     }
+  }
+
+  // Stored Procedure Method for optimized fetching
+  async getClockSessionsWithProcedure(
+    userId: number, 
+    startDate?: string, 
+    endDate?: string,
+    limit: number = 50
+  ): Promise<{ sessions: any[] }> {
+    try {
+      this.logger.log(`🚀 Using stored procedure for clock sessions - User: ${userId}`);
+
+      const result = await this.dataSource.query(
+        'CALL GetClockSessions(?, ?, ?, ?)',
+        [userId, startDate || null, endDate || null, limit]
+      );
+
+      if (result && result.length > 0) {
+        const sessions = result[0] || [];
+
+        this.logger.log(`✅ Stored procedure executed successfully`);
+        this.logger.log(`📊 Sessions found: ${sessions.length}`);
+
+        return { sessions };
+      } else {
+        throw new Error('Invalid result from stored procedure');
+      }
+    } catch (error) {
+      this.logger.log(`⚠️ Stored procedure failed, falling back to service method: ${error.message}`);
+      return this.getClockSessionsFallback(userId, startDate, endDate);
+    }
+  }
+
+  // Fallback method using existing service logic
+  private async getClockSessionsFallback(
+    userId: number, 
+    startDate?: string, 
+    endDate?: string
+  ): Promise<{ sessions: any[] }> {
+    const history = await this.getClockHistory(userId, startDate, endDate);
+    return { sessions: history.sessions };
   }
 
   /**
