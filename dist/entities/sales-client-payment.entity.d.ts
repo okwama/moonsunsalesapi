@@ -7,6 +7,4 @@ export declare class SalesClientPayment {
     status: string;
     payment_method: string;
     salesrepId: number;
-    createdAt: Date;
-    updatedAt: Date;
 }

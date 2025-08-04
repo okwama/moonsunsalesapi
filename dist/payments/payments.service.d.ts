@@ -5,6 +5,7 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 export declare class PaymentsService {
     private paymentsRepository;
     private cloudinaryService;
+    private readonly logger;
     constructor(paymentsRepository: Repository<SalesClientPayment>, cloudinaryService: CloudinaryService);
     create(createPaymentDto: CreatePaymentDto, file?: Express.Multer.File): Promise<SalesClientPayment>;
     findByClientId(clientId: number): Promise<SalesClientPayment[]>;

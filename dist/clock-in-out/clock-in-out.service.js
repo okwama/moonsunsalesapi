@@ -19,8 +19,9 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const login_history_entity_1 = require("../entities/login-history.entity");
 let ClockInOutService = ClockInOutService_1 = class ClockInOutService {
-    constructor(loginHistoryRepository) {
+    constructor(loginHistoryRepository, dataSource) {
         this.loginHistoryRepository = loginHistoryRepository;
+        this.dataSource = dataSource;
         this.logger = new common_1.Logger(ClockInOutService_1.name);
     }
     async clockIn(clockInDto) {
@@ -196,6 +197,29 @@ let ClockInOutService = ClockInOutService_1 = class ClockInOutService {
             return { sessions: [] };
         }
     }
+    async getClockSessionsWithProcedure(userId, startDate, endDate, limit = 50) {
+        try {
+            this.logger.log(`🚀 Using stored procedure for clock sessions - User: ${userId}`);
+            const result = await this.dataSource.query('CALL GetClockSessions(?, ?, ?, ?)', [userId, startDate || null, endDate || null, limit]);
+            if (result && result.length > 0) {
+                const sessions = result[0] || [];
+                this.logger.log(`✅ Stored procedure executed successfully`);
+                this.logger.log(`📊 Sessions found: ${sessions.length}`);
+                return { sessions };
+            }
+            else {
+                throw new Error('Invalid result from stored procedure');
+            }
+        }
+        catch (error) {
+            this.logger.log(`⚠️ Stored procedure failed, falling back to service method: ${error.message}`);
+            return this.getClockSessionsFallback(userId, startDate, endDate);
+        }
+    }
+    async getClockSessionsFallback(userId, startDate, endDate) {
+        const history = await this.getClockHistory(userId, startDate, endDate);
+        return { sessions: history.sessions };
+    }
     formatDateTime(dateTimeStr) {
         try {
             const date = new Date(dateTimeStr);
@@ -227,6 +251,7 @@ exports.ClockInOutService = ClockInOutService;
 exports.ClockInOutService = ClockInOutService = ClockInOutService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(login_history_entity_1.LoginHistory)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.DataSource])
 ], ClockInOutService);
 //# sourceMappingURL=clock-in-out.service.js.map

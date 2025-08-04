@@ -33,7 +33,7 @@ let ClockInOutController = class ClockInOutController {
         return await this.clockInOutService.getTodaySessions(parseInt(userId));
     }
     async getClockHistory(userId, startDate, endDate) {
-        return await this.clockInOutService.getClockHistory(parseInt(userId), startDate, endDate);
+        return await this.clockInOutService.getClockSessionsWithProcedure(parseInt(userId), startDate, endDate);
     }
 };
 exports.ClockInOutController = ClockInOutController;

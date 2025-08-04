@@ -25,6 +25,7 @@ let ClientsService = class ClientsService {
         const clientData = {
             ...createClientDto,
             countryId: userCountryId,
+            status: 0,
         };
         const client = this.clientRepository.create(clientData);
         return this.clientRepository.save(client);
@@ -32,7 +33,7 @@ let ClientsService = class ClientsService {
     async findAll(userCountryId) {
         return this.clientRepository.find({
             where: {
-                status: 0,
+                status: 1,
                 countryId: userCountryId,
             },
             select: [
@@ -195,6 +196,56 @@ let ClientsService = class ClientsService {
             inactive,
             activePercentage: total > 0 ? Math.round((active / total) * 100) : 0,
         };
+    }
+    async findPendingClients(userCountryId) {
+        return this.clientRepository.find({
+            where: {
+                status: 0,
+                countryId: userCountryId,
+            },
+            select: [
+                'id',
+                'name',
+                'contact',
+                'region',
+                'region_id',
+                'status',
+                'countryId',
+                'email',
+                'address',
+                'created_at',
+                'added_by'
+            ],
+            order: { created_at: 'DESC' },
+        });
+    }
+    async approveClient(id, userCountryId) {
+        const existingClient = await this.clientRepository.findOne({
+            where: {
+                id,
+                status: 0,
+                countryId: userCountryId,
+            },
+        });
+        if (!existingClient) {
+            return null;
+        }
+        await this.clientRepository.update(id, { status: 1 });
+        return this.findOne(id, userCountryId);
+    }
+    async rejectClient(id, userCountryId) {
+        const existingClient = await this.clientRepository.findOne({
+            where: {
+                id,
+                status: 0,
+                countryId: userCountryId,
+            },
+        });
+        if (!existingClient) {
+            return false;
+        }
+        await this.clientRepository.update(id, { status: 2 });
+        return true;
     }
 };
 exports.ClientsService = ClientsService;

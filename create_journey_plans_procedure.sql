@@ -16,7 +16,7 @@ BEGIN
     SET start_date = p_date;
     SET end_date = DATE_ADD(p_date, INTERVAL 1 DAY);
     
-    -- First result set: Get journey plans with client and user data
+    -- First result set: Get journey plans with client and user data (matching NestJS expectations)
     SELECT 
         jp.id,
         jp.date,
@@ -34,7 +34,7 @@ BEGIN
         jp.checkoutTime,
         jp.showUpdateLocation,
         jp.routeId,
-        -- Client data
+        -- Client data (nested object format for NestJS)
         c.id as 'client.id',
         c.name as 'client.name',
         c.address as 'client.address',
@@ -57,7 +57,7 @@ BEGIN
         c.countryId as 'client.countryId',
         c.added_by as 'client.added_by',
         c.created_at as 'client.created_at',
-        -- User data
+        -- User data (nested object format for NestJS)
         u.id as 'user.id',
         u.name as 'user.name',
         u.email as 'user.email',
@@ -95,7 +95,7 @@ BEGIN
     ORDER BY jp.date DESC, jp.time DESC
     LIMIT p_limit OFFSET p_offset;
     
-    -- Second result set: Get total count
+    -- Second result set: Get total count (for pagination)
     SELECT COUNT(*) as total
     FROM JourneyPlan jp
     WHERE (p_userId = 0 OR jp.userId = p_userId)

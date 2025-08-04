@@ -16,4 +16,7 @@ export declare class ClientsService {
     findByRoute(routeId: number, userCountryId: number): Promise<Clients[]>;
     findByLocation(latitude: number, longitude: number, radius: number, userCountryId: number): Promise<Clients[]>;
     getClientStats(userCountryId: number, regionId?: number): Promise<any>;
+    findPendingClients(userCountryId: number): Promise<Clients[]>;
+    approveClient(id: number, userCountryId: number): Promise<Clients | null>;
+    rejectClient(id: number, userCountryId: number): Promise<boolean>;
 }

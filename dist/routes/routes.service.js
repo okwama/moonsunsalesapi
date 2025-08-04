@@ -21,37 +21,55 @@ let RoutesService = class RoutesService {
     constructor(routeRepository) {
         this.routeRepository = routeRepository;
     }
-    async findAll() {
+    async findAll(userCountryId) {
         return this.routeRepository.find({
+            where: { country_id: userCountryId },
             order: {
                 name: 'ASC',
             },
         });
     }
-    async findOne(id) {
-        return this.routeRepository.findOne({ where: { id } });
+    async findOne(id, userCountryId) {
+        return this.routeRepository.findOne({
+            where: {
+                id,
+                country_id: userCountryId,
+            }
+        });
     }
-    async findByRegion(regionId) {
+    async findByRegion(regionId, userCountryId) {
         return this.routeRepository.find({
-            where: { region: regionId },
+            where: {
+                region: regionId,
+                country_id: userCountryId,
+            },
             order: { name: 'ASC' },
         });
     }
-    async findByCountry(countryId) {
+    async findByCountry(countryId, userCountryId) {
+        if (countryId !== userCountryId) {
+            return [];
+        }
         return this.routeRepository.find({
-            where: { country_id: countryId },
+            where: { country_id: userCountryId },
             order: { name: 'ASC' },
         });
     }
-    async findActive() {
+    async findActive(userCountryId) {
         return this.routeRepository.find({
-            where: { status: 1 },
+            where: {
+                status: 1,
+                country_id: userCountryId,
+            },
             order: { name: 'ASC' },
         });
     }
-    async findByLeader(leaderId) {
+    async findByLeader(leaderId, userCountryId) {
         return this.routeRepository.find({
-            where: { leader_id: leaderId },
+            where: {
+                leader_id: leaderId,
+                country_id: userCountryId,
+            },
             order: { name: 'ASC' },
         });
     }

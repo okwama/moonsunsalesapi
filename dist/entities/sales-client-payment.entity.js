@@ -46,14 +46,6 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'salesrepId' }),
     __metadata("design:type", Number)
 ], SalesClientPayment.prototype, "salesrepId", void 0);
-__decorate([
-    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
-    __metadata("design:type", Date)
-], SalesClientPayment.prototype, "createdAt", void 0);
-__decorate([
-    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
-    __metadata("design:type", Date)
-], SalesClientPayment.prototype, "updatedAt", void 0);
 exports.SalesClientPayment = SalesClientPayment = __decorate([
     (0, typeorm_1.Entity)('salesclient_payment')
 ], SalesClientPayment);

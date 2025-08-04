@@ -25,88 +25,106 @@ let OrdersService = class OrdersService {
         this.dataSource = dataSource;
     }
     async create(createOrderDto, salesrepId) {
-        const queryRunner = this.dataSource.createQueryRunner();
-        await queryRunner.connect();
-        await queryRunner.startTransaction();
-        try {
-            const soNumber = createOrderDto.soNumber || await this.generateSoNumber();
-            let subtotal = 0;
-            let taxAmount = 0;
-            let totalAmount = 0;
-            let netPrice = 0;
-            for (const item of createOrderDto.orderItems) {
-                const itemUnitPrice = item.unitPrice || 0;
-                const itemQuantity = item.quantity || 0;
-                const itemTotal = itemUnitPrice * itemQuantity;
-                const itemTax = item.taxAmount || (itemTotal * 0.16);
-                const itemNet = itemTotal + itemTax;
-                subtotal += itemTotal;
-                taxAmount += itemTax;
-                totalAmount += itemTotal;
-                netPrice += itemNet;
-            }
-            const orderData = {
-                soNumber: soNumber,
-                clientId: createOrderDto.clientId,
-                orderDate: createOrderDto.orderDate ? new Date(createOrderDto.orderDate) : new Date(),
-                expectedDeliveryDate: createOrderDto.expectedDeliveryDate ? new Date(createOrderDto.expectedDeliveryDate) : null,
-                subtotal: subtotal,
-                taxAmount: taxAmount,
-                totalAmount: totalAmount,
-                netPrice: netPrice,
-                notes: createOrderDto.comment || createOrderDto.notes,
-                createdBy: null,
-                salesrep: salesrepId,
-                riderId: createOrderDto.riderId,
-                status: createOrderDto.status || 'draft',
-                myStatus: createOrderDto.myStatus || 0,
-            };
-            const order = this.orderRepository.create(orderData);
-            const savedOrder = await queryRunner.manager.save(order);
-            for (const itemDto of createOrderDto.orderItems) {
-                const itemUnitPrice = itemDto.unitPrice || 0;
-                const itemQuantity = itemDto.quantity || 0;
-                const itemTotal = itemUnitPrice * itemQuantity;
-                const itemTax = itemDto.taxAmount || (itemTotal * 0.16);
-                const itemNet = itemTotal + itemTax;
-                const orderItemData = {
-                    salesOrderId: savedOrder.id,
-                    productId: itemDto.productId,
-                    quantity: itemQuantity,
-                    unitPrice: itemUnitPrice,
-                    taxAmount: itemTax,
-                    totalPrice: itemTotal,
-                    taxType: itemDto.taxType || 'vat_16',
-                    netPrice: itemNet,
-                    shippedQuantity: itemDto.shippedQuantity || 0,
+        let retryCount = 0;
+        const maxRetries = 3;
+        while (retryCount < maxRetries) {
+            const queryRunner = this.dataSource.createQueryRunner();
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+            try {
+                const soNumber = createOrderDto.soNumber || await this.generateSoNumber();
+                let subtotal = 0;
+                let taxAmount = 0;
+                let totalAmount = 0;
+                let netPrice = 0;
+                for (const item of createOrderDto.orderItems) {
+                    const itemUnitPrice = item.unitPrice || 0;
+                    const itemQuantity = item.quantity || 0;
+                    const itemTotal = itemUnitPrice * itemQuantity;
+                    const itemTax = item.taxAmount || (itemTotal * 0.16);
+                    const itemNet = itemTotal + itemTax;
+                    subtotal += itemTotal;
+                    taxAmount += itemTax;
+                    totalAmount += itemTotal;
+                    netPrice += itemNet;
+                }
+                const orderData = {
+                    soNumber: soNumber,
+                    clientId: createOrderDto.clientId,
+                    orderDate: createOrderDto.orderDate ? new Date(createOrderDto.orderDate) : new Date(),
+                    expectedDeliveryDate: createOrderDto.expectedDeliveryDate ? new Date(createOrderDto.expectedDeliveryDate) : null,
+                    subtotal: subtotal,
+                    taxAmount: taxAmount,
+                    totalAmount: totalAmount,
+                    netPrice: netPrice,
+                    notes: createOrderDto.comment || createOrderDto.notes,
+                    createdBy: null,
+                    salesrep: salesrepId,
+                    riderId: createOrderDto.riderId,
+                    status: createOrderDto.status || 'draft',
+                    myStatus: createOrderDto.myStatus || 0,
                 };
-                const orderItem = this.orderItemRepository.create(orderItemData);
-                await queryRunner.manager.save(orderItem);
+                const order = this.orderRepository.create(orderData);
+                const savedOrder = await queryRunner.manager.save(order);
+                for (const itemDto of createOrderDto.orderItems) {
+                    const itemUnitPrice = itemDto.unitPrice || 0;
+                    const itemQuantity = itemDto.quantity || 0;
+                    const itemTotal = itemUnitPrice * itemQuantity;
+                    const itemTax = itemDto.taxAmount || (itemTotal * 0.16);
+                    const itemNet = itemTotal + itemTax;
+                    const orderItemData = {
+                        salesOrderId: savedOrder.id,
+                        productId: itemDto.productId,
+                        quantity: itemQuantity,
+                        unitPrice: itemUnitPrice,
+                        taxAmount: itemTax,
+                        totalPrice: itemTotal,
+                        taxType: itemDto.taxType || 'vat_16',
+                        netPrice: itemNet,
+                        shippedQuantity: itemDto.shippedQuantity || 0,
+                    };
+                    const orderItem = this.orderItemRepository.create(orderItemData);
+                    await queryRunner.manager.save(orderItem);
+                }
+                await queryRunner.commitTransaction();
+                return this.findOne(savedOrder.id);
             }
-            await queryRunner.commitTransaction();
-            return this.findOne(savedOrder.id);
+            catch (error) {
+                await queryRunner.rollbackTransaction();
+                if (error.message && error.message.includes('Duplicate entry') && error.message.includes('so_number')) {
+                    retryCount++;
+                    if (retryCount >= maxRetries) {
+                        throw new Error(`Failed to create order after ${maxRetries} retries due to SO number conflicts`);
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+                    continue;
+                }
+                throw error;
+            }
+            finally {
+                await queryRunner.release();
+            }
         }
-        catch (error) {
-            await queryRunner.rollbackTransaction();
-            throw error;
-        }
-        finally {
-            await queryRunner.release();
-        }
+        throw new Error('Failed to create order after maximum retries');
     }
     async generateSoNumber() {
+        const currentYear = new Date().getFullYear();
         const latestOrder = await this.orderRepository
             .createQueryBuilder('order')
-            .orderBy('order.id', 'DESC')
+            .where('order.soNumber LIKE :pattern', { pattern: `SO-${currentYear}-%` })
+            .orderBy('order.soNumber', 'DESC')
             .getOne();
-        const currentYear = new Date().getFullYear();
         let nextNumber = 1;
         if (latestOrder && latestOrder.soNumber) {
             const parts = latestOrder.soNumber.split('-');
             if (parts.length >= 3) {
-                const lastNumber = parseInt(parts[2]);
-                if (!isNaN(lastNumber)) {
-                    nextNumber = lastNumber + 1;
+                const yearPart = parts[1];
+                const numberPart = parts[2];
+                if (yearPart === currentYear.toString()) {
+                    const lastNumber = parseInt(numberPart);
+                    if (!isNaN(lastNumber)) {
+                        nextNumber = lastNumber + 1;
+                    }
                 }
             }
         }

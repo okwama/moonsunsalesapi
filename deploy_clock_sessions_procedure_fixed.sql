@@ -1,13 +1,20 @@
+-- Drop existing procedure if it exists
+DROP PROCEDURE IF EXISTS GetClockSessions;
+
+-- Set delimiter for procedure creation
 DELIMITER //
 
 CREATE PROCEDURE GetClockSessions(
     IN p_userId INT,
     IN p_startDate DATE,
     IN p_endDate DATE,
-    IN p_limit INT DEFAULT 50
+    IN p_limit INT
 )
 BEGIN
-    -- Get session history with optional date range (exactly what NestJS expects)
+    -- Set default limit if NULL
+    SET p_limit = COALESCE(p_limit, 50);
+    
+    -- Get session history with optional date range
     SELECT 
         id,
         userId,
@@ -16,7 +23,7 @@ BEGIN
         duration,
         status,
         timezone,
-        -- Formatted fields for frontend (matching NestJS service format)
+        -- Formatted fields for frontend
         DATE_FORMAT(sessionStart, '%Y-%m-%d %H:%i:%s') as formattedStart,
         DATE_FORMAT(sessionEnd, '%Y-%m-%d %H:%i:%s') as formattedEnd,
         CASE 

@@ -17,11 +17,19 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const journey_plan_entity_1 = require("./entities/journey-plan.entity");
+const clients_entity_1 = require("../entities/clients.entity");
+const sales_rep_entity_1 = require("../entities/sales-rep.entity");
 let JourneyPlansService = class JourneyPlansService {
-    constructor(journeyPlanRepository) {
+    constructor(journeyPlanRepository, clientsRepository, salesRepRepository, dataSource) {
         this.journeyPlanRepository = journeyPlanRepository;
+        this.clientsRepository = clientsRepository;
+        this.salesRepRepository = salesRepRepository;
+        this.dataSource = dataSource;
     }
     async create(createJourneyPlanDto, userId) {
+        console.log('🚀 Creating new journey plan...');
+        console.log('📊 Journey plan data:', createJourneyPlanDto);
+        console.log('👤 User ID:', userId);
         const journeyPlan = this.journeyPlanRepository.create({
             ...createJourneyPlanDto,
             userId: userId,
@@ -29,7 +37,105 @@ let JourneyPlansService = class JourneyPlansService {
             date: new Date(createJourneyPlanDto.date),
         });
         const saved = await this.journeyPlanRepository.save(journeyPlan);
+        console.log('✅ Journey plan created with ID:', saved.id);
+        console.log('🏪 Client ID:', saved.clientId);
+        if (userId && saved.clientId) {
+            console.log('🔄 Updating client route to match sales rep route...');
+            await this.updateClientRoute(saved.clientId, userId);
+        }
+        else {
+            console.log('⚠️ Skipping client route update - missing userId or clientId');
+        }
         return this.findOne(saved.id);
+    }
+    async updateClientRoute(clientId, salesRepId) {
+        try {
+            const salesRep = await this.salesRepRepository.findOne({
+                where: { id: salesRepId },
+                select: ['route_id', 'route']
+            });
+            if (!salesRep) {
+                console.log(`⚠️ SalesRep with ID ${salesRepId} not found`);
+                return;
+            }
+            await this.clientsRepository.update(clientId, {
+                route_id: salesRep.route_id,
+                route_name: salesRep.route,
+                route_id_update: salesRep.route_id,
+                route_name_update: salesRep.route,
+            });
+            console.log(`✅ Updated client ${clientId} route to match sales rep ${salesRepId}`);
+            console.log(`   - New route_id: ${salesRep.route_id}`);
+            console.log(`   - New route_name: ${salesRep.route}`);
+        }
+        catch (error) {
+            console.error(`❌ Error updating client route: ${error}`);
+        }
+    }
+    async findAllWithProcedure(options) {
+        try {
+            const { page, limit, status, date, userId, timezone } = options;
+            const offset = (page - 1) * limit;
+            const statusMap = {
+                'pending': 0,
+                'checked_in': 1,
+                'in_progress': 2,
+                'completed': 3,
+                'cancelled': 4,
+            };
+            const statusValue = status ? (statusMap[status] ?? -1) : -1;
+            const targetDate = date || new Date().toISOString().split('T')[0];
+            console.log('🚀 Using stored procedure for journey plans');
+            console.log('📊 Params:', { userId, statusValue, targetDate, page, limit, offset });
+            const result = await this.dataSource.query('CALL GetJourneyPlans(?, ?, ?, ?, ?, ?)', [userId || 0, statusValue, targetDate, page, limit, offset]);
+            if (result && result.length > 0) {
+                const rawData = result[0];
+                const total = result[1]?.[0]?.total || 0;
+                const data = rawData.map((row) => {
+                    const journeyPlan = {};
+                    const client = {};
+                    const user = {};
+                    Object.keys(row).forEach(key => {
+                        if (key.startsWith('client.')) {
+                            const clientKey = key.replace('client.', '');
+                            client[clientKey] = row[key];
+                        }
+                        else if (key.startsWith('user.')) {
+                            const userKey = key.replace('user.', '');
+                            user[userKey] = row[key];
+                        }
+                        else {
+                            journeyPlan[key] = row[key];
+                        }
+                    });
+                    return {
+                        ...journeyPlan,
+                        client,
+                        user,
+                    };
+                });
+                console.log('✅ Stored procedure executed successfully');
+                console.log('📊 Total found:', total);
+                console.log('📊 Data length:', data.length);
+                return {
+                    data,
+                    pagination: {
+                        total,
+                        page,
+                        limit,
+                        totalPages: Math.ceil(total / limit),
+                    },
+                    success: true,
+                };
+            }
+            else {
+                throw new Error('No results from stored procedure');
+            }
+        }
+        catch (error) {
+            console.log('⚠️ Stored procedure failed, falling back to service method:', error.message);
+            return this.findAll(options);
+        }
     }
     async findAll(options) {
         const { page, limit, status, date, userId, timezone } = options;
@@ -202,6 +308,11 @@ exports.JourneyPlansService = JourneyPlansService;
 exports.JourneyPlansService = JourneyPlansService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(journey_plan_entity_1.JourneyPlan)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(clients_entity_1.Clients)),
+    __param(2, (0, typeorm_1.InjectRepository)(sales_rep_entity_1.SalesRep)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.DataSource])
 ], JourneyPlansService);
 //# sourceMappingURL=journey-plans.service.js.map

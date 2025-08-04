@@ -1,5 +1,7 @@
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { JourneyPlan } from './entities/journey-plan.entity';
+import { Clients } from '../entities/clients.entity';
+import { SalesRep } from '../entities/sales-rep.entity';
 import { CreateJourneyPlanDto } from './dto/create-journey-plan.dto';
 import { UpdateJourneyPlanDto } from './dto/update-journey-plan.dto';
 interface FindAllOptions {
@@ -21,8 +23,22 @@ interface FindByDateRangeOptions {
 }
 export declare class JourneyPlansService {
     private journeyPlanRepository;
-    constructor(journeyPlanRepository: Repository<JourneyPlan>);
+    private clientsRepository;
+    private salesRepRepository;
+    private dataSource;
+    constructor(journeyPlanRepository: Repository<JourneyPlan>, clientsRepository: Repository<Clients>, salesRepRepository: Repository<SalesRep>, dataSource: DataSource);
     create(createJourneyPlanDto: CreateJourneyPlanDto, userId?: number): Promise<JourneyPlan>;
+    private updateClientRoute;
+    findAllWithProcedure(options: FindAllOptions): Promise<{
+        data: JourneyPlan[];
+        pagination: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+        success: boolean;
+    }>;
     findAll(options: FindAllOptions): Promise<{
         data: JourneyPlan[];
         pagination: {

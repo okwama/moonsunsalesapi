@@ -3,10 +3,10 @@ import { Route } from '../entities/route.entity';
 export declare class RoutesController {
     private readonly routesService;
     constructor(routesService: RoutesService);
-    findAll(): Promise<Route[]>;
-    findActive(): Promise<Route[]>;
-    findOne(id: string): Promise<Route>;
-    findByRegion(regionId: string): Promise<Route[]>;
-    findByCountry(countryId: string): Promise<Route[]>;
-    findByLeader(leaderId: string): Promise<Route[]>;
+    findAll(req: any): Promise<Route[]>;
+    findActive(req: any): Promise<Route[]>;
+    findOne(id: string, req: any): Promise<Route>;
+    findByRegion(regionId: string, req: any): Promise<Route[]>;
+    findByCountry(countryId: string, req: any): Promise<Route[]>;
+    findByLeader(leaderId: string, req: any): Promise<Route[]>;
 }

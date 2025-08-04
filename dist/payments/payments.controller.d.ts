@@ -1,6 +1,7 @@
 import { PaymentsService } from './payments.service';
 export declare class PaymentsController {
     private readonly paymentsService;
+    private readonly logger;
     constructor(paymentsService: PaymentsService);
     getClientPayments(clientId: number, req: any): Promise<{
         id: number;

@@ -1,10 +1,11 @@
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { LoginHistory } from '../entities/login-history.entity';
 import { ClockInDto, ClockOutDto } from './dto';
 export declare class ClockInOutService {
     private loginHistoryRepository;
+    private dataSource;
     private readonly logger;
-    constructor(loginHistoryRepository: Repository<LoginHistory>);
+    constructor(loginHistoryRepository: Repository<LoginHistory>, dataSource: DataSource);
     clockIn(clockInDto: ClockInDto): Promise<{
         success: boolean;
         message: string;
@@ -26,6 +27,10 @@ export declare class ClockInOutService {
     getClockHistory(userId: number, startDate?: string, endDate?: string): Promise<{
         sessions: any[];
     }>;
+    getClockSessionsWithProcedure(userId: number, startDate?: string, endDate?: string, limit?: number): Promise<{
+        sessions: any[];
+    }>;
+    private getClockSessionsFallback;
     private formatDateTime;
     private formatDuration;
 }
