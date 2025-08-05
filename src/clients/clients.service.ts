@@ -18,7 +18,7 @@ export class ClientsService {
     const clientData = {
       ...createClientDto,
       countryId: userCountryId,
-      status: 0, // Pending approval - admin will change to 1 when approved
+      status: 1, // Pending approval - admin will change to 1 when approved
     };
     
     const client = this.clientRepository.create(clientData);
