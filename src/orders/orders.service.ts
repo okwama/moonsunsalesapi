@@ -28,7 +28,7 @@ export class OrdersService {
         // Generate SO number if not provided
         const soNumber = createOrderDto.soNumber || await this.generateSoNumber();
         
-        // Calculate totals from order items
+        // Calculate totals from order items (tax-inclusive prices)
         let subtotal = 0;
         let taxAmount = 0;
         let totalAmount = 0;
@@ -38,14 +38,17 @@ export class OrdersService {
         for (const item of createOrderDto.orderItems) {
           const itemUnitPrice = item.unitPrice || 0;
           const itemQuantity = item.quantity || 0;
-          const itemTotal = itemUnitPrice * itemQuantity;
-          const itemTax = item.taxAmount || (itemTotal * 0.16); // Default 16% VAT
-          const itemNet = itemTotal + itemTax;
+          const itemTotal = itemUnitPrice * itemQuantity; // This is tax-inclusive total
           
-          subtotal += itemTotal;
+          // Calculate tax amount from tax-inclusive price (16% VAT)
+          // Formula: Tax = Total / (1 + 0.16) * 0.16
+          const itemTax = item.taxAmount || (itemTotal / 1.16 * 0.16);
+          const itemSubtotal = itemTotal - itemTax; // Extract subtotal from tax-inclusive price
+          
+          subtotal += itemSubtotal;
           taxAmount += itemTax;
-          totalAmount += itemTotal;
-          netPrice += itemNet;
+          totalAmount += itemTotal; // This remains the same (tax-inclusive)
+          netPrice += itemTotal; // Net price is the same as total for tax-inclusive
         }
 
         // Create the order
@@ -73,9 +76,11 @@ export class OrdersService {
         for (const itemDto of createOrderDto.orderItems) {
           const itemUnitPrice = itemDto.unitPrice || 0;
           const itemQuantity = itemDto.quantity || 0;
-          const itemTotal = itemUnitPrice * itemQuantity;
-          const itemTax = itemDto.taxAmount || (itemTotal * 0.16); // Default 16% VAT
-          const itemNet = itemTotal + itemTax;
+          const itemTotal = itemUnitPrice * itemQuantity; // Tax-inclusive total
+          
+          // Calculate tax amount from tax-inclusive price (16% VAT)
+          const itemTax = itemDto.taxAmount || (itemTotal / 1.16 * 0.16);
+          const itemSubtotal = itemTotal - itemTax; // Extract subtotal from tax-inclusive price
 
           const orderItemData = {
             salesOrderId: savedOrder.id,
@@ -83,9 +88,9 @@ export class OrdersService {
             quantity: itemQuantity,
             unitPrice: itemUnitPrice,
             taxAmount: itemTax,
-            totalPrice: itemTotal,
+            totalPrice: itemTotal, // This is tax-inclusive
             taxType: itemDto.taxType || 'vat_16',
-            netPrice: itemNet,
+            netPrice: itemTotal, // Net price is same as total for tax-inclusive
             shippedQuantity: itemDto.shippedQuantity || 0,
           };
 
@@ -182,7 +187,7 @@ export class OrdersService {
         // Delete existing order items
         await queryRunner.manager.delete(OrderItem, { salesOrderId: id });
 
-        // Calculate new totals
+        // Calculate new totals (tax-inclusive prices)
         let subtotal = 0;
         let taxAmount = 0;
         let totalAmount = 0;
@@ -192,9 +197,11 @@ export class OrdersService {
         for (const itemDto of updateOrderDto.orderItems) {
           const itemUnitPrice = itemDto.unitPrice || 0;
           const itemQuantity = itemDto.quantity || 0;
-          const itemTotal = itemUnitPrice * itemQuantity;
-          const itemTax = itemDto.taxAmount || (itemTotal * 0.16); // Default 16% VAT
-          const itemNet = itemTotal + itemTax;
+          const itemTotal = itemUnitPrice * itemQuantity; // Tax-inclusive total
+          
+          // Calculate tax amount from tax-inclusive price (16% VAT)
+          const itemTax = itemDto.taxAmount || (itemTotal / 1.16 * 0.16);
+          const itemSubtotal = itemTotal - itemTax; // Extract subtotal from tax-inclusive price
 
           const orderItemData = {
             salesOrderId: id,
@@ -202,19 +209,19 @@ export class OrdersService {
             quantity: itemQuantity,
             unitPrice: itemUnitPrice,
             taxAmount: itemTax,
-            totalPrice: itemTotal,
+            totalPrice: itemTotal, // This is tax-inclusive
             taxType: itemDto.taxType || 'vat_16',
-            netPrice: itemNet,
+            netPrice: itemTotal, // Net price is same as total for tax-inclusive
             shippedQuantity: itemDto.shippedQuantity || 0,
           };
 
           const orderItem = this.orderItemRepository.create(orderItemData);
           await queryRunner.manager.save(orderItem);
 
-          subtotal += itemTotal;
+          subtotal += itemSubtotal;
           taxAmount += itemTax;
-          totalAmount += itemTotal;
-          netPrice += itemNet;
+          totalAmount += itemTotal; // This remains the same (tax-inclusive)
+          netPrice += itemTotal; // Net price is the same as total for tax-inclusive
         }
 
         // Update order totals
