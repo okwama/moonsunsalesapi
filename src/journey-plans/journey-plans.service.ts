@@ -38,6 +38,84 @@ export class JourneyPlansService {
     private dataSource: DataSource,
   ) {}
 
+  // Helper method to provide fallback coordinates
+  private getFallbackCoordinates(countryId: number): { latitude: number; longitude: number } {
+    // Default coordinates for different countries
+    const countryCoordinates: { [key: number]: { latitude: number; longitude: number } } = {
+      1: { latitude: -1.300897837533575, longitude: 36.777742335574864 }, // Kenya (Nairobi)
+      2: { latitude: -6.8235, longitude: 39.2695 }, // Tanzania (Dar es Salaam)
+      3: { latitude: 0.3476, longitude: 32.5825 }, // Uganda (Kampala)
+      4: { latitude: -1.9441, longitude: 30.0619 }, // Rwanda (Kigali)
+      5: { latitude: -3.3731, longitude: 29.9189 }, // Burundi (Bujumbura)
+    };
+
+    return countryCoordinates[countryId] || countryCoordinates[1]; // Default to Kenya
+  }
+
+  // Helper method to ensure client has valid coordinates
+  private async ensureClientCoordinates(client: any): Promise<any> {
+    if (!client) return client;
+    
+    console.log(`🔍 Checking coordinates for client ${client.id}:`, {
+      latitude: client.latitude,
+      longitude: client.longitude,
+      countryId: client.countryId
+    });
+    
+    // If client doesn't have coordinates, fetch them from the database
+    if (client.latitude === null || client.longitude === null || client.latitude === undefined || client.longitude === undefined) {
+      try {
+        console.log(`🔍 Fetching full client data for client ${client.id}...`);
+        const fullClient = await this.clientsRepository.findOne({
+          where: { id: client.id },
+          select: ['id', 'name', 'address', 'contact', 'email', 'latitude', 'longitude', 'region_id', 'region', 'countryId', 'status', 'tax_pin', 'location', 'client_type', 'outlet_account', 'balance', 'created_at']
+        });
+        
+        if (fullClient) {
+          console.log(`🔍 Full client data for ${client.id}:`, {
+            latitude: fullClient.latitude,
+            longitude: fullClient.longitude,
+            countryId: fullClient.countryId
+          });
+          
+          // If still null, use fallback coordinates
+          if (fullClient.latitude === null || fullClient.longitude === null) {
+            const fallback = this.getFallbackCoordinates(fullClient.countryId || 1);
+            console.log(`⚠️ Client ${client.id} has null coordinates in DB, using fallback:`, fallback);
+            return {
+              ...client,
+              latitude: fallback.latitude,
+              longitude: fallback.longitude,
+            };
+          } else {
+            console.log(`✅ Client ${client.id} coordinates fetched from DB:`, { latitude: fullClient.latitude, longitude: fullClient.longitude });
+            return {
+              ...client,
+              latitude: fullClient.latitude,
+              longitude: fullClient.longitude,
+            };
+          }
+        } else {
+          console.log(`⚠️ Client ${client.id} not found in database`);
+        }
+      } catch (error) {
+        console.error(`❌ Error fetching client coordinates for client ${client.id}:`, error);
+      }
+      
+      // Fallback to default coordinates if database fetch fails
+      const fallback = this.getFallbackCoordinates(client.countryId || 1);
+      console.log(`⚠️ Client ${client.id} using fallback coordinates:`, fallback);
+      return {
+        ...client,
+        latitude: fallback.latitude,
+        longitude: fallback.longitude,
+      };
+    } else {
+      console.log(`✅ Client ${client.id} already has valid coordinates:`, { latitude: client.latitude, longitude: client.longitude });
+    }
+    return client;
+  }
+
   async create(createJourneyPlanDto: CreateJourneyPlanDto, userId?: number): Promise<JourneyPlan> {
     console.log('🚀 Creating new journey plan...');
     console.log('📊 Journey plan data:', createJourneyPlanDto);
@@ -95,7 +173,8 @@ export class JourneyPlansService {
     }
   }
 
-  // Stored Procedure Method
+  // Stored Procedure Method - TEMPORARILY DISABLED
+  // Use findAll() method instead for better control and debugging
   async findAllWithProcedure(options: FindAllOptions): Promise<{
     data: JourneyPlan[];
     pagination: {
@@ -137,7 +216,7 @@ export class JourneyPlansService {
         const total = result[1]?.[0]?.total || 0; // Second result set contains count
 
         // Transform flat fields back to nested objects
-        const data = rawData.map((row: any) => {
+        const data = await Promise.all(rawData.map(async (row: any) => {
           const journeyPlan: any = {};
           const client: any = {};
           const user: any = {};
@@ -157,10 +236,10 @@ export class JourneyPlansService {
 
           return {
             ...journeyPlan,
-            client,
+            client: await this.ensureClientCoordinates(client),
             user,
           };
-        });
+        }));
 
         console.log('✅ Stored procedure executed successfully');
         console.log('📊 Total found:', total);
@@ -180,12 +259,12 @@ export class JourneyPlansService {
         throw new Error('No results from stored procedure');
       }
     } catch (error) {
-      console.log('⚠️ Stored procedure failed, falling back to service method:', error.message);
+      console.log('⚠️ Stored procedure disabled, using service method instead');
       return this.findAll(options);
     }
   }
 
-  // Enhanced service method with better performance
+  // Enhanced service method with better performance and coordinate handling
   async findAll(options: FindAllOptions): Promise<{
     data: JourneyPlan[];
     pagination: {
@@ -199,11 +278,61 @@ export class JourneyPlansService {
     const { page, limit, status, date, userId, timezone } = options;
     const offset = (page - 1) * limit;
 
-    // Build query with optimized joins
+    console.log('🚀 Using service method for journey plans (stored procedure disabled)');
+    console.log('📊 Params:', { userId, status, date, page, limit, offset });
+
+    // Build query with optimized joins and explicit field selection
     let query = this.journeyPlanRepository
       .createQueryBuilder('journeyPlan')
       .leftJoinAndSelect('journeyPlan.client', 'client')
-      .leftJoinAndSelect('journeyPlan.user', 'user');
+      .leftJoinAndSelect('journeyPlan.user', 'user')
+      .select([
+        'journeyPlan.id',
+        'journeyPlan.date',
+        'journeyPlan.time',
+        'journeyPlan.userId',
+        'journeyPlan.clientId',
+        'journeyPlan.status',
+        'journeyPlan.checkInTime',
+        'journeyPlan.latitude',
+        'journeyPlan.longitude',
+        'journeyPlan.imageUrl',
+        'journeyPlan.notes',
+        'journeyPlan.checkoutLatitude',
+        'journeyPlan.checkoutLongitude',
+        'journeyPlan.checkoutTime',
+        'journeyPlan.showUpdateLocation',
+        'journeyPlan.routeId',
+        'client.id',
+        'client.name',
+        'client.address',
+        'client.contact',
+        'client.email',
+        'client.latitude',
+        'client.longitude',
+        'client.region_id',
+        'client.region',
+        'client.countryId',
+        'client.status',
+        'client.tax_pin',
+        'client.location',
+        'client.client_type',
+        'client.outlet_account',
+        'client.balance',
+        'client.created_at',
+        'user.id',
+        'user.name',
+        'user.email',
+        'user.phoneNumber',
+        'user.role',
+        'user.status',
+        'user.countryId',
+        'user.region_id',
+        'user.route_id',
+        'user.route',
+        'user.createdAt',
+        'user.updatedAt'
+      ]);
 
     // Add filters
     if (userId) {
@@ -251,16 +380,27 @@ export class JourneyPlansService {
       .take(limit)
       .getMany();
 
+    // Apply coordinate fixes to each journey plan
+    const fixedData = await Promise.all(data.map(async journeyPlan => ({
+      ...journeyPlan,
+      client: await this.ensureClientCoordinates(journeyPlan.client),
+    })));
+
     const totalPages = Math.ceil(total / limit);
 
     console.log('🔍 Journey Plans Results:');
     console.log('🔍 Total found:', total);
-    console.log('🔍 Data length:', data.length);
-    console.log('🔍 First journey plan date:', data[0]?.date);
-    console.log('🔍 All journey plan dates:', data.map(jp => jp.date));
+    console.log('🔍 Data length:', fixedData.length);
+    console.log('🔍 First journey plan date:', fixedData[0]?.date);
+    console.log('🔍 Sample client data:', fixedData[0]?.client ? {
+      id: fixedData[0].client.id,
+      name: fixedData[0].client.name,
+      latitude: fixedData[0].client.latitude,
+      longitude: fixedData[0].client.longitude
+    } : 'No client data');
 
     return {
-      data,
+      data: fixedData,
       pagination: {
         total,
         page,
@@ -328,10 +468,16 @@ export class JourneyPlansService {
       .take(limit)
       .getMany();
 
+    // Apply coordinate fixes to each journey plan
+    const fixedData = await Promise.all(data.map(async journeyPlan => ({
+      ...journeyPlan,
+      client: await this.ensureClientCoordinates(journeyPlan.client),
+    })));
+
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data,
+      data: fixedData,
       pagination: {
         total,
         page,
@@ -343,10 +489,16 @@ export class JourneyPlansService {
   }
 
   async findOne(id: number): Promise<JourneyPlan | null> {
-    return this.journeyPlanRepository.findOne({
+    const journeyPlan = await this.journeyPlanRepository.findOne({
       where: { id },
       relations: ['client', 'user'],
     });
+
+    if (journeyPlan && journeyPlan.client) {
+      journeyPlan.client = await this.ensureClientCoordinates(journeyPlan.client);
+    }
+
+    return journeyPlan;
   }
 
   async update(id: number, updateJourneyPlanDto: UpdateJourneyPlanDto): Promise<JourneyPlan | null> {

@@ -25,7 +25,7 @@ let ClientsService = class ClientsService {
         const clientData = {
             ...createClientDto,
             countryId: userCountryId,
-            status: 0,
+            status: 1,
         };
         const client = this.clientRepository.create(clientData);
         return this.clientRepository.save(client);

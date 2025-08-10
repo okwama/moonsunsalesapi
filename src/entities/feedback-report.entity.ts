@@ -2,40 +2,31 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { SalesRep } from './sales-rep.entity';
 import { Clients } from './clients.entity';
 
-@Entity('feedback_reports')
+@Entity('FeedbackReport')
 export class FeedbackReport {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'journey_plan_id' })
-  journeyPlanId: number;
+  @Column({ name: 'reportId', nullable: true })
+  reportId: number;
 
-  @Column({ name: 'salesrep_id' })
-  salesrepId: number;
-
-  @Column({ name: 'client_id' })
-  clientId: number;
-
-  @Column({ type: 'text' })
+  @Column({ name: 'comment', nullable: true })
   comment: string;
 
-  @Column({ name: 'report_type', default: 'FEEDBACK' })
-  reportType: string;
-
-  @Column({ name: 'status', default: 'PENDING' })
-  status: string;
-
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  @Column({ name: 'clientId' })
+  clientId: number;
+
+  @Column({ name: 'userId' })
+  userId: number;
 
   @ManyToOne(() => SalesRep)
-  @JoinColumn({ name: 'salesrep_id' })
-  salesrep: SalesRep;
+  @JoinColumn({ name: 'userId' })
+  user: SalesRep;
 
   @ManyToOne(() => Clients)
-  @JoinColumn({ name: 'client_id' })
+  @JoinColumn({ name: 'clientId' })
   client: Clients;
 } 

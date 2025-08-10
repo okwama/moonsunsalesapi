@@ -22,14 +22,28 @@ let ReportsController = class ReportsController {
     }
     async submitReport(reportData) {
         try {
+            console.log('📋 Reports Controller: Received report submission');
+            console.log('📋 Report data:', reportData);
             const result = await this.reportsService.submitReport(reportData);
-            return {
+            const response = {
                 success: true,
-                data: result,
+                report: {
+                    id: result.id,
+                    type: reportData.type,
+                    journeyPlanId: reportData.journeyPlanId,
+                    userId: reportData.userId || reportData.salesRepId,
+                    clientId: reportData.clientId,
+                    createdAt: result.createdAt,
+                },
+                specificReport: result,
                 message: 'Report submitted successfully',
             };
+            console.log('✅ Reports Controller: Report submitted successfully');
+            console.log('✅ Response:', response);
+            return response;
         }
         catch (error) {
+            console.error('❌ Reports Controller: Report submission failed:', error);
             return {
                 success: false,
                 error: error.message,

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Aug 03, 2025 at 01:18 PM
+-- Generation Time: Aug 10, 2025 at 09:19 PM
 -- Server version: 10.6.22-MariaDB-cll-lve
 -- PHP Version: 8.3.23
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `citlogis_finance`
+-- Database: `impulsep_moonsun`
 --
 
 -- --------------------------------------------------------
@@ -273,7 +273,7 @@ CREATE TABLE `Clients` (
   `contact` varchar(191) NOT NULL,
   `tax_pin` varchar(191) DEFAULT NULL,
   `location` varchar(191) DEFAULT NULL,
-  `status` int(11) NOT NULL DEFAULT 0,
+  `status` int(11) NOT NULL DEFAULT 1,
   `client_type` int(11) DEFAULT NULL,
   `outlet_account` int(11) DEFAULT NULL,
   `countryId` int(11) NOT NULL,
@@ -330,6 +330,44 @@ CREATE TABLE `Country` (
   `name` varchar(191) NOT NULL,
   `status` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `credit_notes`
+--
+
+CREATE TABLE `credit_notes` (
+  `id` int(11) NOT NULL,
+  `credit_note_number` varchar(50) NOT NULL,
+  `client_id` int(11) NOT NULL,
+  `original_invoice_id` int(11) NOT NULL,
+  `credit_note_date` date NOT NULL,
+  `total_amount` decimal(15,2) DEFAULT 0.00,
+  `reason` text NOT NULL,
+  `status` enum('draft','issued','cancelled') DEFAULT 'draft',
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `credit_note_items`
+--
+
+CREATE TABLE `credit_note_items` (
+  `id` int(11) NOT NULL,
+  `credit_note_id` int(11) NOT NULL,
+  `invoice_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `quantity` decimal(10,2) NOT NULL,
+  `unit_price` decimal(15,2) NOT NULL,
+  `total_price` decimal(15,2) NOT NULL,
+  `reason` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
 
@@ -656,58 +694,33 @@ CREATE TABLE `key_account_targets` (
 -- --------------------------------------------------------
 
 --
--- Stand-in structure for view `LeaveBalanceSummary`
--- (See below for the actual view)
+-- Table structure for table `LeaveRequestSummary`
 --
-CREATE TABLE `LeaveBalanceSummary` (
-`id` int(11)
-,`employee_id` int(11)
-,`leave_type_id` int(11)
-,`year` int(4)
-,`total_days` int(11)
-,`used_days` int(11)
-,`remaining_days` int(11)
-,`carried_over_days` int(11)
-,`created_at` timestamp
-,`updated_at` timestamp
-,`employee_name` varchar(255)
-,`employee_email` varchar(255)
-,`employee_phone` varchar(50)
-,`leave_type_name` varchar(100)
-,`leave_type_description` text
-,`available_days` bigint(12)
-);
 
--- --------------------------------------------------------
-
---
--- Stand-in structure for view `LeaveRequestSummary`
--- (See below for the actual view)
---
 CREATE TABLE `LeaveRequestSummary` (
-`id` int(11)
-,`employee_id` int(11)
-,`leave_type_id` int(11)
-,`start_date` date
-,`end_date` date
-,`is_half_day` tinyint(1)
-,`reason` varchar(255)
-,`attachment_url` varchar(255)
-,`status` enum('pending','approved','rejected','cancelled')
-,`approved_by` int(11)
-,`employee_type_id` int(11)
-,`notes` text
-,`applied_at` datetime
-,`created_at` timestamp
-,`updated_at` timestamp
-,`employee_name` varchar(255)
-,`employee_email` varchar(255)
-,`employee_phone` varchar(50)
-,`leave_type_name` varchar(100)
-,`leave_type_default_days` int(11)
-,`approver_name` varchar(255)
-,`total_days_requested` int(9)
-);
+  `id` int(11) DEFAULT NULL,
+  `employee_id` int(11) DEFAULT NULL,
+  `leave_type_id` int(11) DEFAULT NULL,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `is_half_day` tinyint(1) DEFAULT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  `attachment_url` varchar(255) DEFAULT NULL,
+  `status` enum('pending','approved','rejected','cancelled') DEFAULT NULL,
+  `approved_by` int(11) DEFAULT NULL,
+  `employee_type_id` int(11) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `applied_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `employee_name` varchar(255) DEFAULT NULL,
+  `employee_email` varchar(255) DEFAULT NULL,
+  `employee_phone` varchar(50) DEFAULT NULL,
+  `leave_type_name` varchar(100) DEFAULT NULL,
+  `leave_type_default_days` int(11) DEFAULT NULL,
+  `approver_name` varchar(255) DEFAULT NULL,
+  `total_days_requested` int(9) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
 
@@ -1078,6 +1091,7 @@ CREATE TABLE `products` (
 CREATE TABLE `purchase_orders` (
   `id` int(11) NOT NULL,
   `po_number` varchar(20) NOT NULL,
+  `invoice_number` varchar(200) NOT NULL,
   `supplier_id` int(11) NOT NULL,
   `order_date` date NOT NULL,
   `expected_delivery_date` date DEFAULT NULL,
@@ -1085,6 +1099,8 @@ CREATE TABLE `purchase_orders` (
   `subtotal` decimal(15,2) DEFAULT 0.00,
   `tax_amount` decimal(15,2) DEFAULT 0.00,
   `total_amount` decimal(15,2) DEFAULT 0.00,
+  `amount_paid` decimal(11,2) NOT NULL,
+  `balance` decimal(11,2) NOT NULL,
   `notes` text DEFAULT NULL,
   `created_by` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -1104,7 +1120,9 @@ CREATE TABLE `purchase_order_items` (
   `quantity` int(11) NOT NULL,
   `unit_price` decimal(10,2) NOT NULL,
   `total_price` decimal(15,2) NOT NULL,
-  `received_quantity` int(11) DEFAULT 0
+  `received_quantity` int(11) DEFAULT 0,
+  `tax_amount` decimal(15,2) DEFAULT 0.00,
+  `tax_type` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
@@ -1117,6 +1135,7 @@ CREATE TABLE `receipts` (
   `id` int(11) NOT NULL,
   `receipt_number` varchar(20) NOT NULL,
   `client_id` int(11) NOT NULL,
+  `invoice_number` int(50) NOT NULL,
   `sales_order_id` int(11) DEFAULT NULL,
   `receipt_date` date NOT NULL,
   `payment_method` enum('cash','check','bank_transfer','credit_card') NOT NULL,
@@ -1277,8 +1296,12 @@ CREATE TABLE `sales_orders` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `rider_id` int(11) DEFAULT NULL,
   `assigned_at` timestamp NULL DEFAULT '0000-00-00 00:00:00',
+  `recepients_name` varchar(255) DEFAULT NULL,
+  `recepients_contact` varchar(255) DEFAULT NULL,
+  `dispatched_by` int(11) DEFAULT NULL,
   `status` enum('draft','confirmed','shipped','delivered','cancelled','in payment','paid') DEFAULT 'draft',
-  `my_status` tinyint(3) NOT NULL
+  `my_status` tinyint(3) NOT NULL,
+  `delivered_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
@@ -1350,6 +1373,27 @@ CREATE TABLE `staff` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `is_active` int(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `staff_tasks`
+--
+
+CREATE TABLE `staff_tasks` (
+  `id` int(11) NOT NULL,
+  `title` varchar(191) NOT NULL,
+  `description` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `completed_at` datetime DEFAULT NULL,
+  `is_completed` tinyint(1) NOT NULL DEFAULT 0,
+  `priority` varchar(50) NOT NULL DEFAULT 'medium',
+  `status` varchar(50) NOT NULL DEFAULT 'pending',
+  `staff_id` int(11) NOT NULL,
+  `assigned_by_id` int(11) DEFAULT NULL,
+  `due_date` datetime DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1568,7 +1612,7 @@ CREATE TABLE `users` (
   `email` varchar(100) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `full_name` varchar(100) NOT NULL,
-  `role` enum('admin','manager','accountant','user','hr','sales') DEFAULT 'user',
+  `role` enum('admin','user','rider') DEFAULT 'user',
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -1785,6 +1829,27 @@ ALTER TABLE `client_payments`
 --
 ALTER TABLE `Country`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `credit_notes`
+--
+ALTER TABLE `credit_notes`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `credit_note_number` (`credit_note_number`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `idx_client_id` (`client_id`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_credit_note_date` (`credit_note_date`),
+  ADD KEY `idx_credit_note_number` (`credit_note_number`);
+
+--
+-- Indexes for table `credit_note_items`
+--
+ALTER TABLE `credit_note_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_credit_note_id` (`credit_note_id`),
+  ADD KEY `idx_invoice_id` (`invoice_id`),
+  ADD KEY `idx_product_id` (`product_id`);
 
 --
 -- Indexes for table `customers`
@@ -2212,6 +2277,16 @@ ALTER TABLE `staff`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `staff_tasks`
+--
+ALTER TABLE `staff_tasks`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_staff_id` (`staff_id`),
+  ADD KEY `idx_assigned_by_id` (`assigned_by_id`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_priority` (`priority`);
+
+--
 -- Indexes for table `stock_takes`
 --
 ALTER TABLE `stock_takes`
@@ -2459,6 +2534,18 @@ ALTER TABLE `client_payments`
 -- AUTO_INCREMENT for table `Country`
 --
 ALTER TABLE `Country`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `credit_notes`
+--
+ALTER TABLE `credit_notes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `credit_note_items`
+--
+ALTER TABLE `credit_note_items`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -2768,6 +2855,12 @@ ALTER TABLE `staff`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `staff_tasks`
+--
+ALTER TABLE `staff_tasks`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `stock_takes`
 --
 ALTER TABLE `stock_takes`
@@ -2869,191 +2962,24 @@ ALTER TABLE `VisibilityReport`
 ALTER TABLE `warning_letters`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
--- --------------------------------------------------------
-
---
--- Structure for view `LeaveBalanceSummary`
---
-DROP TABLE IF EXISTS `LeaveBalanceSummary`;
-
-CREATE ALGORITHM=UNDEFINED DEFINER=`citlogis_bryan`@`%` SQL SECURITY DEFINER VIEW `LeaveBalanceSummary`  AS SELECT `lb`.`id` AS `id`, `lb`.`employee_id` AS `employee_id`, `lb`.`leave_type_id` AS `leave_type_id`, `lb`.`year` AS `year`, `lb`.`total_days` AS `total_days`, `lb`.`used_days` AS `used_days`, `lb`.`remaining_days` AS `remaining_days`, `lb`.`carried_over_days` AS `carried_over_days`, `lb`.`created_at` AS `created_at`, `lb`.`updated_at` AS `updated_at`, `s`.`name` AS `employee_name`, `s`.`business_email` AS `employee_email`, `s`.`phone_number` AS `employee_phone`, `lt`.`name` AS `leave_type_name`, `lt`.`description` AS `leave_type_description`, `lb`.`total_days`- `lb`.`used_days` AS `available_days` FROM ((`leave_balances` `lb` join `staff` `s` on(`lb`.`employee_id` = `s`.`id`)) join `leave_types` `lt` on(`lb`.`leave_type_id` = `lt`.`id`)) ;
-
--- --------------------------------------------------------
-
---
--- Structure for view `LeaveRequestSummary`
---
-DROP TABLE IF EXISTS `LeaveRequestSummary`;
-
-CREATE ALGORITHM=UNDEFINED DEFINER=`citlogis_bryan`@`%` SQL SECURITY DEFINER VIEW `LeaveRequestSummary`  AS SELECT `lr`.`id` AS `id`, `lr`.`employee_id` AS `employee_id`, `lr`.`leave_type_id` AS `leave_type_id`, `lr`.`start_date` AS `start_date`, `lr`.`end_date` AS `end_date`, `lr`.`is_half_day` AS `is_half_day`, `lr`.`reason` AS `reason`, `lr`.`attachment_url` AS `attachment_url`, `lr`.`status` AS `status`, `lr`.`approved_by` AS `approved_by`, `lr`.`employee_type_id` AS `employee_type_id`, `lr`.`notes` AS `notes`, `lr`.`applied_at` AS `applied_at`, `lr`.`created_at` AS `created_at`, `lr`.`updated_at` AS `updated_at`, `s`.`name` AS `employee_name`, `s`.`business_email` AS `employee_email`, `s`.`phone_number` AS `employee_phone`, `lt`.`name` AS `leave_type_name`, `lt`.`default_days` AS `leave_type_default_days`, `approver`.`name` AS `approver_name`, to_days(`lr`.`end_date`) - to_days(`lr`.`start_date`) + 1 AS `total_days_requested` FROM (((`leave_requests` `lr` join `staff` `s` on(`lr`.`employee_id` = `s`.`id`)) join `leave_types` `lt` on(`lr`.`leave_type_id` = `lt`.`id`)) left join `staff` `approver` on(`lr`.`approved_by` = `approver`.`id`)) ;
-
 --
 -- Constraints for dumped tables
 --
 
 --
--- Constraints for table `assets`
+-- Constraints for table `credit_notes`
 --
-ALTER TABLE `assets`
-  ADD CONSTRAINT `assets_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `chart_of_accounts1` (`id`);
+ALTER TABLE `credit_notes`
+  ADD CONSTRAINT `credit_notes_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `Clients` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `credit_notes_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
--- Constraints for table `attendance`
+-- Constraints for table `credit_note_items`
 --
-ALTER TABLE `attendance`
-  ADD CONSTRAINT `attendance_staff_id_fkey` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `CategoryPriceOption`
---
-ALTER TABLE `CategoryPriceOption`
-  ADD CONSTRAINT `CategoryPriceOption_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `Category` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `chart_of_accounts1`
---
-ALTER TABLE `chart_of_accounts1`
-  ADD CONSTRAINT `chart_of_accounts1_ibfk_1` FOREIGN KEY (`parent_account_id`) REFERENCES `chart_of_accounts1` (`id`);
-
---
--- Constraints for table `chat_messages`
---
-ALTER TABLE `chat_messages`
-  ADD CONSTRAINT `chat_messages_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `chat_rooms` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `chat_messages_ibfk_2` FOREIGN KEY (`sender_id`) REFERENCES `staff` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `chat_rooms`
---
-ALTER TABLE `chat_rooms`
-  ADD CONSTRAINT `chat_rooms_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `staff` (`id`);
-
---
--- Constraints for table `chat_room_members`
---
-ALTER TABLE `chat_room_members`
-  ADD CONSTRAINT `chat_room_members_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `chat_rooms` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `chat_room_members_ibfk_2` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `client_ledger`
---
-ALTER TABLE `client_ledger`
-  ADD CONSTRAINT `fk_client_ledger_client` FOREIGN KEY (`client_id`) REFERENCES `Clients` (`id`);
-
---
--- Constraints for table `client_payments`
---
-ALTER TABLE `client_payments`
-  ADD CONSTRAINT `fk_client_payments_account` FOREIGN KEY (`account_id`) REFERENCES `chart_of_accounts` (`id`);
-
---
--- Constraints for table `customers`
---
-ALTER TABLE `customers`
-  ADD CONSTRAINT `customers_ibfk_1` FOREIGN KEY (`country_id`) REFERENCES `Country` (`id`),
-  ADD CONSTRAINT `customers_ibfk_2` FOREIGN KEY (`region_id`) REFERENCES `Regions` (`id`),
-  ADD CONSTRAINT `customers_ibfk_3` FOREIGN KEY (`route_id`) REFERENCES `routes` (`id`);
-
---
--- Constraints for table `distributors_targets`
---
-ALTER TABLE `distributors_targets`
-  ADD CONSTRAINT `distributors_targets_ibfk_1` FOREIGN KEY (`sales_rep_id`) REFERENCES `SalesRep` (`id`);
-
---
--- Constraints for table `employee_contracts`
---
-ALTER TABLE `employee_contracts`
-  ADD CONSTRAINT `employee_contracts_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`),
-  ADD CONSTRAINT `employee_contracts_ibfk_2` FOREIGN KEY (`renewed_from`) REFERENCES `employee_contracts` (`id`);
-
---
--- Constraints for table `employee_documents`
---
-ALTER TABLE `employee_documents`
-  ADD CONSTRAINT `employee_documents_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`);
-
---
--- Constraints for table `employee_warnings`
---
-ALTER TABLE `employee_warnings`
-  ADD CONSTRAINT `employee_warnings_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`);
-
---
--- Constraints for table `faulty_products_items`
---
-ALTER TABLE `faulty_products_items`
-  ADD CONSTRAINT `faulty_products_items_ibfk_1` FOREIGN KEY (`report_id`) REFERENCES `faulty_products_reports` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `faulty_products_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON UPDATE CASCADE;
-
---
--- Constraints for table `faulty_products_reports`
---
-ALTER TABLE `faulty_products_reports`
-  ADD CONSTRAINT `faulty_products_reports_ibfk_1` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_faulty_products_reports_assigned_to` FOREIGN KEY (`assigned_to`) REFERENCES `staff` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_faulty_products_reports_reported_by` FOREIGN KEY (`reported_by`) REFERENCES `staff` (`id`) ON UPDATE CASCADE;
-
---
--- Constraints for table `inventory_receipts`
---
-ALTER TABLE `inventory_receipts`
-  ADD CONSTRAINT `fk_inventory_receipts_received_by` FOREIGN KEY (`received_by`) REFERENCES `users` (`id`),
-  ADD CONSTRAINT `inventory_receipts_ibfk_1` FOREIGN KEY (`purchase_order_id`) REFERENCES `purchase_orders` (`id`),
-  ADD CONSTRAINT `inventory_receipts_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
-  ADD CONSTRAINT `inventory_receipts_ibfk_3` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`);
-
---
--- Constraints for table `inventory_transactions`
---
-ALTER TABLE `inventory_transactions`
-  ADD CONSTRAINT `inventory_transactions_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
-  ADD CONSTRAINT `inventory_transactions_ibfk_2` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`),
-  ADD CONSTRAINT `inventory_transactions_ibfk_3` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `inventory_transfers`
---
-ALTER TABLE `inventory_transfers`
-  ADD CONSTRAINT `inventory_transfers_ibfk_1` FOREIGN KEY (`from_store_id`) REFERENCES `stores` (`id`),
-  ADD CONSTRAINT `inventory_transfers_ibfk_2` FOREIGN KEY (`to_store_id`) REFERENCES `stores` (`id`),
-  ADD CONSTRAINT `inventory_transfers_ibfk_3` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
-  ADD CONSTRAINT `inventory_transfers_ibfk_4` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `journal_entries`
---
-ALTER TABLE `journal_entries`
-  ADD CONSTRAINT `journal_entries_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `journal_entry_lines`
---
-ALTER TABLE `journal_entry_lines`
-  ADD CONSTRAINT `journal_entry_lines_ibfk_1` FOREIGN KEY (`journal_entry_id`) REFERENCES `journal_entries` (`id`);
-
---
--- Constraints for table `key_account_targets`
---
-ALTER TABLE `key_account_targets`
-  ADD CONSTRAINT `key_account_targets_ibfk_1` FOREIGN KEY (`sales_rep_id`) REFERENCES `SalesRep` (`id`);
-
---
--- Constraints for table `leave_balances`
---
-ALTER TABLE `leave_balances`
-  ADD CONSTRAINT `leave_balances_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `staff` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `leave_balances_leave_type_id_fkey` FOREIGN KEY (`leave_type_id`) REFERENCES `leave_types` (`id`) ON UPDATE CASCADE;
-
---
--- Constraints for table `leave_requests`
---
-ALTER TABLE `leave_requests`
-  ADD CONSTRAINT `leave_requests_approved_by_fkey` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `leave_requests_employee_id_fkey` FOREIGN KEY (`employee_id`) REFERENCES `staff` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `leave_requests_leave_type_id_fkey` FOREIGN KEY (`leave_type_id`) REFERENCES `leave_types` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `leave_requests_salesrep_id_fkey` FOREIGN KEY (`salesrep`) REFERENCES `SalesRep` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `credit_note_items`
+  ADD CONSTRAINT `credit_note_items_ibfk_1` FOREIGN KEY (`credit_note_id`) REFERENCES `credit_notes` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `credit_note_items_ibfk_2` FOREIGN KEY (`invoice_id`) REFERENCES `sales_orders` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `credit_note_items_ibfk_3` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `LoginHistory`
@@ -3062,172 +2988,11 @@ ALTER TABLE `LoginHistory`
   ADD CONSTRAINT `LoginHistory_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `SalesRep` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `my_assets`
+-- Constraints for table `staff_tasks`
 --
-ALTER TABLE `my_assets`
-  ADD CONSTRAINT `my_assets_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON UPDATE CASCADE;
-
---
--- Constraints for table `my_receipts`
---
-ALTER TABLE `my_receipts`
-  ADD CONSTRAINT `my_receipts_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `my_receipts_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `out_of_office_requests`
---
-ALTER TABLE `out_of_office_requests`
-  ADD CONSTRAINT `out_of_office_requests_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`);
-
---
--- Constraints for table `payments`
---
-ALTER TABLE `payments`
-  ADD CONSTRAINT `fk_payments_purchase_order` FOREIGN KEY (`purchase_order_id`) REFERENCES `purchase_orders` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`),
-  ADD CONSTRAINT `payments_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `payroll_history`
---
-ALTER TABLE `payroll_history`
-  ADD CONSTRAINT `payroll_history_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`);
-
---
--- Constraints for table `purchase_orders`
---
-ALTER TABLE `purchase_orders`
-  ADD CONSTRAINT `purchase_orders_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`),
-  ADD CONSTRAINT `purchase_orders_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `purchase_order_items`
---
-ALTER TABLE `purchase_order_items`
-  ADD CONSTRAINT `purchase_order_items_ibfk_1` FOREIGN KEY (`purchase_order_id`) REFERENCES `purchase_orders` (`id`),
-  ADD CONSTRAINT `purchase_order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`);
-
---
--- Constraints for table `receipts`
---
-ALTER TABLE `receipts`
-  ADD CONSTRAINT `fk_receipts_client` FOREIGN KEY (`client_id`) REFERENCES `Clients` (`id`),
-  ADD CONSTRAINT `fk_receipts_sales_order` FOREIGN KEY (`sales_order_id`) REFERENCES `sales_orders` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `receipts_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `retail_targets`
---
-ALTER TABLE `retail_targets`
-  ADD CONSTRAINT `retail_targets_ibfk_1` FOREIGN KEY (`sales_rep_id`) REFERENCES `SalesRep` (`id`);
-
---
--- Constraints for table `salesclient_payment`
---
-ALTER TABLE `salesclient_payment`
-  ADD CONSTRAINT `clientrel` FOREIGN KEY (`clientId`) REFERENCES `Clients` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `salesrep_id` FOREIGN KEY (`salesrepId`) REFERENCES `SalesRep` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `sales_orders`
---
-ALTER TABLE `sales_orders`
-  ADD CONSTRAINT `fk_sales_orders_client` FOREIGN KEY (`client_id`) REFERENCES `Clients` (`id`),
-  ADD CONSTRAINT `sales_orders_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `salesrep_rel` FOREIGN KEY (`salesrep`) REFERENCES `SalesRep` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `sales_order_items`
---
-ALTER TABLE `sales_order_items`
-  ADD CONSTRAINT `sales_order_items_ibfk_1` FOREIGN KEY (`sales_order_id`) REFERENCES `sales_orders` (`id`),
-  ADD CONSTRAINT `sales_order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`);
-
---
--- Constraints for table `sales_rep_managers`
---
-ALTER TABLE `sales_rep_managers`
-  ADD CONSTRAINT `sales_rep_managers_ibfk_1` FOREIGN KEY (`sales_rep_id`) REFERENCES `SalesRep` (`id`),
-  ADD CONSTRAINT `sales_rep_managers_ibfk_2` FOREIGN KEY (`manager_id`) REFERENCES `managers` (`id`);
-
---
--- Constraints for table `sales_rep_manager_assignments`
---
-ALTER TABLE `sales_rep_manager_assignments`
-  ADD CONSTRAINT `sales_rep_manager_assignments_ibfk_1` FOREIGN KEY (`sales_rep_id`) REFERENCES `SalesRep` (`id`),
-  ADD CONSTRAINT `sales_rep_manager_assignments_ibfk_2` FOREIGN KEY (`manager_id`) REFERENCES `managers` (`id`);
-
---
--- Constraints for table `stock_takes`
---
-ALTER TABLE `stock_takes`
-  ADD CONSTRAINT `stock_takes_ibfk_1` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`),
-  ADD CONSTRAINT `stock_takes_ibfk_2` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `stock_take_items`
---
-ALTER TABLE `stock_take_items`
-  ADD CONSTRAINT `stock_take_items_ibfk_1` FOREIGN KEY (`stock_take_id`) REFERENCES `stock_takes` (`id`),
-  ADD CONSTRAINT `stock_take_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`);
-
---
--- Constraints for table `stores`
---
-ALTER TABLE `stores`
-  ADD CONSTRAINT `country_re` FOREIGN KEY (`country_id`) REFERENCES `Country` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `store_inventory`
---
-ALTER TABLE `store_inventory`
-  ADD CONSTRAINT `store_inventory_ibfk_1` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`),
-  ADD CONSTRAINT `store_inventory_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`);
-
---
--- Constraints for table `supplier_ledger`
---
-ALTER TABLE `supplier_ledger`
-  ADD CONSTRAINT `supplier_ledger_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`);
-
---
--- Constraints for table `targets`
---
-ALTER TABLE `targets`
-  ADD CONSTRAINT `fk_targets_salesRep` FOREIGN KEY (`salesRepId`) REFERENCES `SalesRep` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `termination_letters`
---
-ALTER TABLE `termination_letters`
-  ADD CONSTRAINT `termination_letters_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`);
-
---
--- Constraints for table `UpliftSale`
---
-ALTER TABLE `UpliftSale`
-  ADD CONSTRAINT `clients` FOREIGN KEY (`clientId`) REFERENCES `Clients` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `salesrep` FOREIGN KEY (`userId`) REFERENCES `SalesRep` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `UpliftSaleItem`
---
-ALTER TABLE `UpliftSaleItem`
-  ADD CONSTRAINT `productid` FOREIGN KEY (`productId`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `uplift_order` FOREIGN KEY (`upliftSaleId`) REFERENCES `UpliftSale` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `user_devices`
---
-ALTER TABLE `user_devices`
-  ADD CONSTRAINT `user_devices_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `staff` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `warning_letters`
---
-ALTER TABLE `warning_letters`
-  ADD CONSTRAINT `warning_letters_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`);
+ALTER TABLE `staff_tasks`
+  ADD CONSTRAINT `fk_staff_tasks_assigned_by` FOREIGN KEY (`assigned_by_id`) REFERENCES `staff` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_staff_tasks_staff` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -41,12 +41,12 @@ let OrdersService = class OrdersService {
                     const itemUnitPrice = item.unitPrice || 0;
                     const itemQuantity = item.quantity || 0;
                     const itemTotal = itemUnitPrice * itemQuantity;
-                    const itemTax = item.taxAmount || (itemTotal * 0.16);
-                    const itemNet = itemTotal + itemTax;
-                    subtotal += itemTotal;
+                    const itemTax = item.taxAmount || (itemTotal / 1.16 * 0.16);
+                    const itemSubtotal = itemTotal - itemTax;
+                    subtotal += itemSubtotal;
                     taxAmount += itemTax;
                     totalAmount += itemTotal;
-                    netPrice += itemNet;
+                    netPrice += itemTotal;
                 }
                 const orderData = {
                     soNumber: soNumber,
@@ -70,8 +70,8 @@ let OrdersService = class OrdersService {
                     const itemUnitPrice = itemDto.unitPrice || 0;
                     const itemQuantity = itemDto.quantity || 0;
                     const itemTotal = itemUnitPrice * itemQuantity;
-                    const itemTax = itemDto.taxAmount || (itemTotal * 0.16);
-                    const itemNet = itemTotal + itemTax;
+                    const itemTax = itemDto.taxAmount || (itemTotal / 1.16 * 0.16);
+                    const itemSubtotal = itemTotal - itemTax;
                     const orderItemData = {
                         salesOrderId: savedOrder.id,
                         productId: itemDto.productId,
@@ -80,7 +80,7 @@ let OrdersService = class OrdersService {
                         taxAmount: itemTax,
                         totalPrice: itemTotal,
                         taxType: itemDto.taxType || 'vat_16',
-                        netPrice: itemNet,
+                        netPrice: itemTotal,
                         shippedQuantity: itemDto.shippedQuantity || 0,
                     };
                     const orderItem = this.orderItemRepository.create(orderItemData);
@@ -160,8 +160,8 @@ let OrdersService = class OrdersService {
                     const itemUnitPrice = itemDto.unitPrice || 0;
                     const itemQuantity = itemDto.quantity || 0;
                     const itemTotal = itemUnitPrice * itemQuantity;
-                    const itemTax = itemDto.taxAmount || (itemTotal * 0.16);
-                    const itemNet = itemTotal + itemTax;
+                    const itemTax = itemDto.taxAmount || (itemTotal / 1.16 * 0.16);
+                    const itemSubtotal = itemTotal - itemTax;
                     const orderItemData = {
                         salesOrderId: id,
                         productId: itemDto.productId,
@@ -170,15 +170,15 @@ let OrdersService = class OrdersService {
                         taxAmount: itemTax,
                         totalPrice: itemTotal,
                         taxType: itemDto.taxType || 'vat_16',
-                        netPrice: itemNet,
+                        netPrice: itemTotal,
                         shippedQuantity: itemDto.shippedQuantity || 0,
                     };
                     const orderItem = this.orderItemRepository.create(orderItemData);
                     await queryRunner.manager.save(orderItem);
-                    subtotal += itemTotal;
+                    subtotal += itemSubtotal;
                     taxAmount += itemTax;
                     totalAmount += itemTotal;
-                    netPrice += itemNet;
+                    netPrice += itemTotal;
                 }
                 await queryRunner.manager.update(order_entity_1.Order, id, {
                     subtotal: subtotal,

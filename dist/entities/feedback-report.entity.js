@@ -21,48 +21,36 @@ __decorate([
     __metadata("design:type", Number)
 ], FeedbackReport.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'journey_plan_id' }),
+    (0, typeorm_1.Column)({ name: 'reportId', nullable: true }),
     __metadata("design:type", Number)
-], FeedbackReport.prototype, "journeyPlanId", void 0);
+], FeedbackReport.prototype, "reportId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'salesrep_id' }),
-    __metadata("design:type", Number)
-], FeedbackReport.prototype, "salesrepId", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'client_id' }),
-    __metadata("design:type", Number)
-], FeedbackReport.prototype, "clientId", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'text' }),
+    (0, typeorm_1.Column)({ name: 'comment', nullable: true }),
     __metadata("design:type", String)
 ], FeedbackReport.prototype, "comment", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'report_type', default: 'FEEDBACK' }),
-    __metadata("design:type", String)
-], FeedbackReport.prototype, "reportType", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'status', default: 'PENDING' }),
-    __metadata("design:type", String)
-], FeedbackReport.prototype, "status", void 0);
-__decorate([
-    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
+    (0, typeorm_1.CreateDateColumn)({ name: 'createdAt' }),
     __metadata("design:type", Date)
 ], FeedbackReport.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
-    __metadata("design:type", Date)
-], FeedbackReport.prototype, "updatedAt", void 0);
+    (0, typeorm_1.Column)({ name: 'clientId' }),
+    __metadata("design:type", Number)
+], FeedbackReport.prototype, "clientId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'userId' }),
+    __metadata("design:type", Number)
+], FeedbackReport.prototype, "userId", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => sales_rep_entity_1.SalesRep),
-    (0, typeorm_1.JoinColumn)({ name: 'salesrep_id' }),
+    (0, typeorm_1.JoinColumn)({ name: 'userId' }),
     __metadata("design:type", sales_rep_entity_1.SalesRep)
-], FeedbackReport.prototype, "salesrep", void 0);
+], FeedbackReport.prototype, "user", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => clients_entity_1.Clients),
-    (0, typeorm_1.JoinColumn)({ name: 'client_id' }),
+    (0, typeorm_1.JoinColumn)({ name: 'clientId' }),
     __metadata("design:type", clients_entity_1.Clients)
 ], FeedbackReport.prototype, "client", void 0);
 exports.FeedbackReport = FeedbackReport = __decorate([
-    (0, typeorm_1.Entity)('feedback_reports')
+    (0, typeorm_1.Entity)('FeedbackReport')
 ], FeedbackReport);
 //# sourceMappingURL=feedback-report.entity.js.map

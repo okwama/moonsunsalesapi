@@ -28,7 +28,7 @@ let JourneyPlansController = class JourneyPlansController {
     }
     findAll(req, page = '1', limit = '20', status, timezone = 'Africa/Nairobi', date) {
         const userId = req.user?.id;
-        return this.journeyPlansService.findAllWithProcedure({
+        return this.journeyPlansService.findAll({
             page: parseInt(page),
             limit: parseInt(limit),
             status,

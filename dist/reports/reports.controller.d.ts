@@ -4,14 +4,19 @@ export declare class ReportsController {
     constructor(reportsService: ReportsService);
     submitReport(reportData: any): Promise<{
         success: boolean;
-        data: any;
+        report: {
+            id: any;
+            type: any;
+            journeyPlanId: any;
+            userId: any;
+            clientId: any;
+            createdAt: any;
+        };
+        specificReport: any;
         message: string;
-        error?: undefined;
     } | {
         success: boolean;
         error: any;
-        data?: undefined;
-        message?: undefined;
     }>;
     getReportsByJourneyPlan(journeyPlanId: number): Promise<{
         success: boolean;

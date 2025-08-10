@@ -21,60 +21,48 @@ __decorate([
     __metadata("design:type", Number)
 ], ProductReport.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'journey_plan_id' }),
+    (0, typeorm_1.Column)({ name: 'reportId', nullable: true }),
     __metadata("design:type", Number)
-], ProductReport.prototype, "journeyPlanId", void 0);
+], ProductReport.prototype, "reportId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'salesrep_id' }),
-    __metadata("design:type", Number)
-], ProductReport.prototype, "salesrepId", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'client_id' }),
-    __metadata("design:type", Number)
-], ProductReport.prototype, "clientId", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'product_id' }),
-    __metadata("design:type", Number)
-], ProductReport.prototype, "productId", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'product_name' }),
+    (0, typeorm_1.Column)({ name: 'productName', nullable: true }),
     __metadata("design:type", String)
 ], ProductReport.prototype, "productName", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'availability_status' }),
-    __metadata("design:type", String)
-], ProductReport.prototype, "availabilityStatus", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'quantity_available', type: 'int', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'quantity', nullable: true }),
     __metadata("design:type", Number)
-], ProductReport.prototype, "quantityAvailable", void 0);
+], ProductReport.prototype, "quantity", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'report_type', default: 'PRODUCT_AVAILABILITY' }),
+    (0, typeorm_1.Column)({ name: 'comment', nullable: true }),
     __metadata("design:type", String)
-], ProductReport.prototype, "reportType", void 0);
+], ProductReport.prototype, "comment", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'status', default: 'PENDING' }),
-    __metadata("design:type", String)
-], ProductReport.prototype, "status", void 0);
-__decorate([
-    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
+    (0, typeorm_1.CreateDateColumn)({ name: 'createdAt' }),
     __metadata("design:type", Date)
 ], ProductReport.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
-    __metadata("design:type", Date)
-], ProductReport.prototype, "updatedAt", void 0);
+    (0, typeorm_1.Column)({ name: 'clientId' }),
+    __metadata("design:type", Number)
+], ProductReport.prototype, "clientId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'userId' }),
+    __metadata("design:type", Number)
+], ProductReport.prototype, "userId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'productId', nullable: true }),
+    __metadata("design:type", Number)
+], ProductReport.prototype, "productId", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => sales_rep_entity_1.SalesRep),
-    (0, typeorm_1.JoinColumn)({ name: 'salesrep_id' }),
+    (0, typeorm_1.JoinColumn)({ name: 'userId' }),
     __metadata("design:type", sales_rep_entity_1.SalesRep)
-], ProductReport.prototype, "salesrep", void 0);
+], ProductReport.prototype, "user", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => clients_entity_1.Clients),
-    (0, typeorm_1.JoinColumn)({ name: 'client_id' }),
+    (0, typeorm_1.JoinColumn)({ name: 'clientId' }),
     __metadata("design:type", clients_entity_1.Clients)
 ], ProductReport.prototype, "client", void 0);
 exports.ProductReport = ProductReport = __decorate([
-    (0, typeorm_1.Entity)('product_reports')
+    (0, typeorm_1.Entity)('ProductReport')
 ], ProductReport);
 //# sourceMappingURL=product-report.entity.js.map

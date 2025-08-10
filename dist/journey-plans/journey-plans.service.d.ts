@@ -27,6 +27,8 @@ export declare class JourneyPlansService {
     private salesRepRepository;
     private dataSource;
     constructor(journeyPlanRepository: Repository<JourneyPlan>, clientsRepository: Repository<Clients>, salesRepRepository: Repository<SalesRep>, dataSource: DataSource);
+    private getFallbackCoordinates;
+    private ensureClientCoordinates;
     create(createJourneyPlanDto: CreateJourneyPlanDto, userId?: number): Promise<JourneyPlan>;
     private updateClientRoute;
     findAllWithProcedure(options: FindAllOptions): Promise<{

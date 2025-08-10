@@ -10,13 +10,32 @@ export class ReportsController {
   @Post()
   async submitReport(@Body() reportData: any) {
     try {
+      console.log('📋 Reports Controller: Received report submission');
+      console.log('📋 Report data:', reportData);
+      
       const result = await this.reportsService.submitReport(reportData);
-      return {
+      
+      // Format response to match Flutter app expectations
+      const response = {
         success: true,
-        data: result,
+        report: {
+          id: result.id,
+          type: reportData.type,
+          journeyPlanId: reportData.journeyPlanId,
+          userId: reportData.userId || reportData.salesRepId, // Use userId if available, fallback to salesRepId
+          clientId: reportData.clientId,
+          createdAt: result.createdAt,
+        },
+        specificReport: result,
         message: 'Report submitted successfully',
       };
+      
+      console.log('✅ Reports Controller: Report submitted successfully');
+      console.log('✅ Response:', response);
+      
+      return response;
     } catch (error) {
+      console.error('❌ Reports Controller: Report submission failed:', error);
       return {
         success: false,
         error: error.message,

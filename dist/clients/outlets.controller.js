@@ -20,6 +20,37 @@ let OutletsController = class OutletsController {
     constructor(clientsService) {
         this.clientsService = clientsService;
     }
+    async getOutlet(id, req) {
+        const client = await this.clientsService.findOne(+id, req.user.countryId);
+        if (!client) {
+            return null;
+        }
+        if (client.latitude === null || client.longitude === null) {
+            const fallbackCoordinates = this.getFallbackCoordinates(client.countryId || 1);
+            console.log(`⚠️ Client ${client.id} has null coordinates, using fallback:`, fallbackCoordinates);
+            client.latitude = fallbackCoordinates.latitude;
+            client.longitude = fallbackCoordinates.longitude;
+        }
+        return {
+            id: client.id,
+            name: client.name,
+            address: client.address,
+            contact: client.contact,
+            email: client.email,
+            latitude: client.latitude,
+            longitude: client.longitude,
+            regionId: client.region_id,
+            region: client.region,
+            countryId: client.countryId,
+            status: client.status,
+            taxPin: client.tax_pin,
+            location: client.location,
+            clientType: client.client_type,
+            outletAccount: client.outlet_account,
+            balance: client.balance,
+            createdAt: client.created_at,
+        };
+    }
     async createOutlet(body, req) {
         const createClientDto = {
             name: body.name,
@@ -63,8 +94,26 @@ let OutletsController = class OutletsController {
             createdAt: client.created_at,
         };
     }
+    getFallbackCoordinates(countryId) {
+        const countryCoordinates = {
+            1: { latitude: -1.300897837533575, longitude: 36.777742335574864 },
+            2: { latitude: -6.8235, longitude: 39.2695 },
+            3: { latitude: 0.3476, longitude: 32.5825 },
+            4: { latitude: -1.9441, longitude: 30.0619 },
+            5: { latitude: -3.3731, longitude: 29.9189 },
+        };
+        return countryCoordinates[countryId] || countryCoordinates[1];
+    }
 };
 exports.OutletsController = OutletsController;
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], OutletsController.prototype, "getOutlet", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),

@@ -26,6 +26,75 @@ let JourneyPlansService = class JourneyPlansService {
         this.salesRepRepository = salesRepRepository;
         this.dataSource = dataSource;
     }
+    getFallbackCoordinates(countryId) {
+        const countryCoordinates = {
+            1: { latitude: -1.300897837533575, longitude: 36.777742335574864 },
+            2: { latitude: -6.8235, longitude: 39.2695 },
+            3: { latitude: 0.3476, longitude: 32.5825 },
+            4: { latitude: -1.9441, longitude: 30.0619 },
+            5: { latitude: -3.3731, longitude: 29.9189 },
+        };
+        return countryCoordinates[countryId] || countryCoordinates[1];
+    }
+    async ensureClientCoordinates(client) {
+        if (!client)
+            return client;
+        console.log(`🔍 Checking coordinates for client ${client.id}:`, {
+            latitude: client.latitude,
+            longitude: client.longitude,
+            countryId: client.countryId
+        });
+        if (client.latitude === null || client.longitude === null || client.latitude === undefined || client.longitude === undefined) {
+            try {
+                console.log(`🔍 Fetching full client data for client ${client.id}...`);
+                const fullClient = await this.clientsRepository.findOne({
+                    where: { id: client.id },
+                    select: ['id', 'name', 'address', 'contact', 'email', 'latitude', 'longitude', 'region_id', 'region', 'countryId', 'status', 'tax_pin', 'location', 'client_type', 'outlet_account', 'balance', 'created_at']
+                });
+                if (fullClient) {
+                    console.log(`🔍 Full client data for ${client.id}:`, {
+                        latitude: fullClient.latitude,
+                        longitude: fullClient.longitude,
+                        countryId: fullClient.countryId
+                    });
+                    if (fullClient.latitude === null || fullClient.longitude === null) {
+                        const fallback = this.getFallbackCoordinates(fullClient.countryId || 1);
+                        console.log(`⚠️ Client ${client.id} has null coordinates in DB, using fallback:`, fallback);
+                        return {
+                            ...client,
+                            latitude: fallback.latitude,
+                            longitude: fallback.longitude,
+                        };
+                    }
+                    else {
+                        console.log(`✅ Client ${client.id} coordinates fetched from DB:`, { latitude: fullClient.latitude, longitude: fullClient.longitude });
+                        return {
+                            ...client,
+                            latitude: fullClient.latitude,
+                            longitude: fullClient.longitude,
+                        };
+                    }
+                }
+                else {
+                    console.log(`⚠️ Client ${client.id} not found in database`);
+                }
+            }
+            catch (error) {
+                console.error(`❌ Error fetching client coordinates for client ${client.id}:`, error);
+            }
+            const fallback = this.getFallbackCoordinates(client.countryId || 1);
+            console.log(`⚠️ Client ${client.id} using fallback coordinates:`, fallback);
+            return {
+                ...client,
+                latitude: fallback.latitude,
+                longitude: fallback.longitude,
+            };
+        }
+        else {
+            console.log(`✅ Client ${client.id} already has valid coordinates:`, { latitude: client.latitude, longitude: client.longitude });
+        }
+        return client;
+    }
     async create(createJourneyPlanDto, userId) {
         console.log('🚀 Creating new journey plan...');
         console.log('📊 Journey plan data:', createJourneyPlanDto);
@@ -91,7 +160,7 @@ let JourneyPlansService = class JourneyPlansService {
             if (result && result.length > 0) {
                 const rawData = result[0];
                 const total = result[1]?.[0]?.total || 0;
-                const data = rawData.map((row) => {
+                const data = await Promise.all(rawData.map(async (row) => {
                     const journeyPlan = {};
                     const client = {};
                     const user = {};
@@ -110,10 +179,10 @@ let JourneyPlansService = class JourneyPlansService {
                     });
                     return {
                         ...journeyPlan,
-                        client,
+                        client: await this.ensureClientCoordinates(client),
                         user,
                     };
-                });
+                }));
                 console.log('✅ Stored procedure executed successfully');
                 console.log('📊 Total found:', total);
                 console.log('📊 Data length:', data.length);
@@ -133,17 +202,66 @@ let JourneyPlansService = class JourneyPlansService {
             }
         }
         catch (error) {
-            console.log('⚠️ Stored procedure failed, falling back to service method:', error.message);
+            console.log('⚠️ Stored procedure disabled, using service method instead');
             return this.findAll(options);
         }
     }
     async findAll(options) {
         const { page, limit, status, date, userId, timezone } = options;
         const offset = (page - 1) * limit;
+        console.log('🚀 Using service method for journey plans (stored procedure disabled)');
+        console.log('📊 Params:', { userId, status, date, page, limit, offset });
         let query = this.journeyPlanRepository
             .createQueryBuilder('journeyPlan')
             .leftJoinAndSelect('journeyPlan.client', 'client')
-            .leftJoinAndSelect('journeyPlan.user', 'user');
+            .leftJoinAndSelect('journeyPlan.user', 'user')
+            .select([
+            'journeyPlan.id',
+            'journeyPlan.date',
+            'journeyPlan.time',
+            'journeyPlan.userId',
+            'journeyPlan.clientId',
+            'journeyPlan.status',
+            'journeyPlan.checkInTime',
+            'journeyPlan.latitude',
+            'journeyPlan.longitude',
+            'journeyPlan.imageUrl',
+            'journeyPlan.notes',
+            'journeyPlan.checkoutLatitude',
+            'journeyPlan.checkoutLongitude',
+            'journeyPlan.checkoutTime',
+            'journeyPlan.showUpdateLocation',
+            'journeyPlan.routeId',
+            'client.id',
+            'client.name',
+            'client.address',
+            'client.contact',
+            'client.email',
+            'client.latitude',
+            'client.longitude',
+            'client.region_id',
+            'client.region',
+            'client.countryId',
+            'client.status',
+            'client.tax_pin',
+            'client.location',
+            'client.client_type',
+            'client.outlet_account',
+            'client.balance',
+            'client.created_at',
+            'user.id',
+            'user.name',
+            'user.email',
+            'user.phoneNumber',
+            'user.role',
+            'user.status',
+            'user.countryId',
+            'user.region_id',
+            'user.route_id',
+            'user.route',
+            'user.createdAt',
+            'user.updatedAt'
+        ]);
         if (userId) {
             query = query.where('journeyPlan.userId = :userId', { userId });
         }
@@ -179,14 +297,23 @@ let JourneyPlansService = class JourneyPlansService {
             .skip(offset)
             .take(limit)
             .getMany();
+        const fixedData = await Promise.all(data.map(async (journeyPlan) => ({
+            ...journeyPlan,
+            client: await this.ensureClientCoordinates(journeyPlan.client),
+        })));
         const totalPages = Math.ceil(total / limit);
         console.log('🔍 Journey Plans Results:');
         console.log('🔍 Total found:', total);
-        console.log('🔍 Data length:', data.length);
-        console.log('🔍 First journey plan date:', data[0]?.date);
-        console.log('🔍 All journey plan dates:', data.map(jp => jp.date));
+        console.log('🔍 Data length:', fixedData.length);
+        console.log('🔍 First journey plan date:', fixedData[0]?.date);
+        console.log('🔍 Sample client data:', fixedData[0]?.client ? {
+            id: fixedData[0].client.id,
+            name: fixedData[0].client.name,
+            latitude: fixedData[0].client.latitude,
+            longitude: fixedData[0].client.longitude
+        } : 'No client data');
         return {
-            data,
+            data: fixedData,
             pagination: {
                 total,
                 page,
@@ -231,9 +358,13 @@ let JourneyPlansService = class JourneyPlansService {
             .skip(offset)
             .take(limit)
             .getMany();
+        const fixedData = await Promise.all(data.map(async (journeyPlan) => ({
+            ...journeyPlan,
+            client: await this.ensureClientCoordinates(journeyPlan.client),
+        })));
         const totalPages = Math.ceil(total / limit);
         return {
-            data,
+            data: fixedData,
             pagination: {
                 total,
                 page,
@@ -244,10 +375,14 @@ let JourneyPlansService = class JourneyPlansService {
         };
     }
     async findOne(id) {
-        return this.journeyPlanRepository.findOne({
+        const journeyPlan = await this.journeyPlanRepository.findOne({
             where: { id },
             relations: ['client', 'user'],
         });
+        if (journeyPlan && journeyPlan.client) {
+            journeyPlan.client = await this.ensureClientCoordinates(journeyPlan.client);
+        }
+        return journeyPlan;
     }
     async update(id, updateJourneyPlanDto) {
         const journeyPlan = await this.findOne(id);

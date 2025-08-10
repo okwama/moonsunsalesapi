@@ -2,17 +2,14 @@ import { SalesRep } from './sales-rep.entity';
 import { Clients } from './clients.entity';
 export declare class ProductReport {
     id: number;
-    journeyPlanId: number;
-    salesrepId: number;
-    clientId: number;
-    productId: number;
+    reportId: number;
     productName: string;
-    availabilityStatus: string;
-    quantityAvailable: number;
-    reportType: string;
-    status: string;
+    quantity: number;
+    comment: string;
     createdAt: Date;
-    updatedAt: Date;
-    salesrep: SalesRep;
+    clientId: number;
+    userId: number;
+    productId: number;
+    user: SalesRep;
     client: Clients;
 }
