@@ -16,6 +16,7 @@ const leave_requests_service_1 = require("./leave-requests.service");
 const leave_entity_1 = require("../entities/leave.entity");
 const leave_type_entity_1 = require("../entities/leave-type.entity");
 const leave_request_entity_1 = require("../entities/leave-request.entity");
+const cloudinary_service_1 = require("../cloudinary/cloudinary.service");
 let LeaveModule = class LeaveModule {
 };
 exports.LeaveModule = LeaveModule;
@@ -23,7 +24,7 @@ exports.LeaveModule = LeaveModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([leave_entity_1.Leave, leave_type_entity_1.LeaveType, leave_request_entity_1.LeaveRequest])],
         controllers: [leave_controller_1.LeaveController, leave_requests_controller_1.LeaveRequestsController],
-        providers: [leave_service_1.LeaveService, leave_requests_service_1.LeaveRequestsService],
+        providers: [leave_service_1.LeaveService, leave_requests_service_1.LeaveRequestsService, cloudinary_service_1.CloudinaryService],
         exports: [leave_service_1.LeaveService, leave_requests_service_1.LeaveRequestsService],
     })
 ], LeaveModule);

@@ -12,6 +12,8 @@ const config_1 = require("@nestjs/config");
 const typeorm_1 = require("@nestjs/typeorm");
 const jwt_1 = require("@nestjs/jwt");
 const passport_1 = require("@nestjs/passport");
+const platform_express_1 = require("@nestjs/platform-express");
+const schedule_1 = require("@nestjs/schedule");
 const database_config_1 = require("./config/database.config");
 const database_health_service_1 = require("./config/database-health.service");
 const auth_module_1 = require("./auth/auth.module");
@@ -58,6 +60,10 @@ exports.AppModule = AppModule = __decorate([
                 }),
                 inject: [config_1.ConfigService],
             }),
+            platform_express_1.MulterModule.register({
+                storage: require('multer').memoryStorage(),
+            }),
+            schedule_1.ScheduleModule.forRoot(),
             passport_1.PassportModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,

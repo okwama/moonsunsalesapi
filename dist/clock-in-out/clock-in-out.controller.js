@@ -14,11 +14,14 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ClockInOutController = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const clock_in_out_service_1 = require("./clock-in-out.service");
+const clock_out_scheduler_service_1 = require("./clock-out-scheduler.service");
 const dto_1 = require("./dto");
 let ClockInOutController = class ClockInOutController {
-    constructor(clockInOutService) {
+    constructor(clockInOutService, clockOutSchedulerService) {
         this.clockInOutService = clockInOutService;
+        this.clockOutSchedulerService = clockOutSchedulerService;
     }
     async clockIn(clockInDto) {
         return await this.clockInOutService.clockIn(clockInDto);
@@ -34,6 +37,13 @@ let ClockInOutController = class ClockInOutController {
     }
     async getClockHistory(userId, startDate, endDate) {
         return await this.clockInOutService.getClockSessionsWithProcedure(parseInt(userId), startDate, endDate);
+    }
+    async triggerAutoClockOut() {
+        return await this.clockOutSchedulerService.manualTriggerClockOut();
+    }
+    async getActiveSessionsCount() {
+        const count = await this.clockOutSchedulerService.getActiveSessionsCount();
+        return { activeSessionsCount: count };
     }
 };
 exports.ClockInOutController = ClockInOutController;
@@ -76,8 +86,23 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], ClockInOutController.prototype, "getClockHistory", null);
+__decorate([
+    (0, common_1.Post)('trigger-auto-clockout'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], ClockInOutController.prototype, "triggerAutoClockOut", null);
+__decorate([
+    (0, common_1.Get)('active-sessions-count'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], ClockInOutController.prototype, "getActiveSessionsCount", null);
 exports.ClockInOutController = ClockInOutController = __decorate([
     (0, common_1.Controller)('clock-in-out'),
-    __metadata("design:paramtypes", [clock_in_out_service_1.ClockInOutService])
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __metadata("design:paramtypes", [clock_in_out_service_1.ClockInOutService,
+        clock_out_scheduler_service_1.ClockOutSchedulerService])
 ], ClockInOutController);
 //# sourceMappingURL=clock-in-out.controller.js.map

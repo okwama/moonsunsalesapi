@@ -9,8 +9,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ClockInOutModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const schedule_1 = require("@nestjs/schedule");
 const clock_in_out_controller_1 = require("./clock-in-out.controller");
 const clock_in_out_service_1 = require("./clock-in-out.service");
+const clock_out_scheduler_service_1 = require("./clock-out-scheduler.service");
 const sales_rep_entity_1 = require("../entities/sales-rep.entity");
 const login_history_entity_1 = require("../entities/login-history.entity");
 let ClockInOutModule = class ClockInOutModule {
@@ -18,10 +20,13 @@ let ClockInOutModule = class ClockInOutModule {
 exports.ClockInOutModule = ClockInOutModule;
 exports.ClockInOutModule = ClockInOutModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([sales_rep_entity_1.SalesRep, login_history_entity_1.LoginHistory])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([sales_rep_entity_1.SalesRep, login_history_entity_1.LoginHistory]),
+            schedule_1.ScheduleModule.forRoot(),
+        ],
         controllers: [clock_in_out_controller_1.ClockInOutController],
-        providers: [clock_in_out_service_1.ClockInOutService],
-        exports: [clock_in_out_service_1.ClockInOutService],
+        providers: [clock_in_out_service_1.ClockInOutService, clock_out_scheduler_service_1.ClockOutSchedulerService],
+        exports: [clock_in_out_service_1.ClockInOutService, clock_out_scheduler_service_1.ClockOutSchedulerService],
     })
 ], ClockInOutModule);
 //# sourceMappingURL=clock-in-out.module.js.map

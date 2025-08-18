@@ -1,10 +1,16 @@
-import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ClockInOutService } from './clock-in-out.service';
+import { ClockOutSchedulerService } from './clock-out-scheduler.service';
 import { ClockInDto, ClockOutDto } from './dto';
 
 @Controller('clock-in-out')
+@UseGuards(JwtAuthGuard)
 export class ClockInOutController {
-  constructor(private readonly clockInOutService: ClockInOutService) {}
+  constructor(
+    private readonly clockInOutService: ClockInOutService,
+    private readonly clockOutSchedulerService: ClockOutSchedulerService,
+  ) {}
 
   /**
    * Clock In - Start a new session
@@ -54,5 +60,23 @@ export class ClockInOutController {
       startDate,
       endDate,
     );
+  }
+
+  /**
+   * Manual trigger for automatic clock-out (for testing)
+   */
+  @Post('trigger-auto-clockout')
+  @HttpCode(HttpStatus.OK)
+  async triggerAutoClockOut() {
+    return await this.clockOutSchedulerService.manualTriggerClockOut();
+  }
+
+  /**
+   * Get count of active sessions
+   */
+  @Get('active-sessions-count')
+  async getActiveSessionsCount() {
+    const count = await this.clockOutSchedulerService.getActiveSessionsCount();
+    return { activeSessionsCount: count };
   }
 } 

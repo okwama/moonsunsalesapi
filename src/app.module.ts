@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { MulterModule } from '@nestjs/platform-express';
+import { ScheduleModule } from '@nestjs/schedule';
 import { getDatabaseConfig } from './config/database.config';
 import { DatabaseHealthService } from './config/database-health.service';
 
@@ -47,6 +49,10 @@ import { PaymentsModule } from './payments/payments.module';
       }),
       inject: [ConfigService],
     }),
+    MulterModule.register({
+      storage: require('multer').memoryStorage(),
+    }),
+    ScheduleModule.forRoot(),
     PassportModule,
     AuthModule,
     UsersModule,

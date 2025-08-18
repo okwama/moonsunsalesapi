@@ -14,11 +14,14 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LeaveController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const leave_service_1 = require("./leave.service");
+const cloudinary_service_1 = require("../cloudinary/cloudinary.service");
 let LeaveController = class LeaveController {
-    constructor(leaveService) {
+    constructor(leaveService, cloudinaryService) {
         this.leaveService = leaveService;
+        this.cloudinaryService = cloudinaryService;
     }
     async getLeaveTypes() {
         return this.leaveService.getLeaveTypes();
@@ -39,15 +42,44 @@ let LeaveController = class LeaveController {
     async findOne(id) {
         return this.leaveService.findOne(+id);
     }
-    async create(createLeaveDto, req) {
+    async create(createLeaveDto, file, req) {
         try {
-            if (!createLeaveDto.userId) {
-                createLeaveDto.userId = req.user?.sub || req.user?.id;
+            console.log('🔍 Backend - Received createLeaveDto:', createLeaveDto);
+            console.log('🔍 Backend - JWT user:', req.user);
+            console.log('🔍 Backend - File received:', file ? file.originalname : 'No file');
+            let attachmentUrl = null;
+            if (file) {
+                try {
+                    console.log('🔍 Backend - Uploading file to Cloudinary...');
+                    const cloudinaryResult = await this.cloudinaryService.uploadToCloudinary(file.buffer, {
+                        mimetype: file.mimetype,
+                        folder: 'whoosh/leave-attachments',
+                    });
+                    attachmentUrl = cloudinaryResult.url;
+                    console.log('🔍 Backend - File uploaded to Cloudinary:', attachmentUrl);
+                }
+                catch (uploadError) {
+                    console.error('🔍 Backend - Cloudinary upload failed:', uploadError);
+                }
             }
-            if (!createLeaveDto.userId) {
+            const parsedDto = {
+                userId: createLeaveDto.userId ? parseInt(createLeaveDto.userId, 10) : null,
+                leaveType: createLeaveDto.leaveType,
+                startDate: createLeaveDto.startDate,
+                endDate: createLeaveDto.endDate,
+                reason: createLeaveDto.reason,
+                attachment: attachmentUrl
+            };
+            console.log('🔍 Backend - Parsed DTO:', parsedDto);
+            if (!parsedDto.userId) {
+                parsedDto.userId = req.user?.sub || req.user?.id;
+                console.log('🔍 Backend - Set userId from JWT:', parsedDto.userId);
+            }
+            if (!parsedDto.userId) {
                 throw new Error('User ID is required');
             }
-            return this.leaveService.create(createLeaveDto);
+            console.log('🔍 Backend - Final createLeaveDto:', parsedDto);
+            return this.leaveService.create(parsedDto);
         }
         catch (error) {
             console.error('Error in leave creation controller:', error);
@@ -93,10 +125,12 @@ __decorate([
 __decorate([
     (0, common_1.Post)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('attachment')),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Request)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, Object, Object]),
     __metadata("design:returntype", Promise)
 ], LeaveController.prototype, "create", null);
 __decorate([
@@ -117,6 +151,7 @@ __decorate([
 exports.LeaveController = LeaveController = __decorate([
     (0, common_1.Controller)('leave'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __metadata("design:paramtypes", [leave_service_1.LeaveService])
+    __metadata("design:paramtypes", [leave_service_1.LeaveService,
+        cloudinary_service_1.CloudinaryService])
 ], LeaveController);
 //# sourceMappingURL=leave.controller.js.map

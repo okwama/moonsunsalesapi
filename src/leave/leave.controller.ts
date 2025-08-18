@@ -1,11 +1,16 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LeaveService } from './leave.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Controller('leave')
 @UseGuards(JwtAuthGuard)
 export class LeaveController {
-  constructor(private readonly leaveService: LeaveService) {}
+  constructor(
+    private readonly leaveService: LeaveService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   @Get('types/all')
   async getLeaveTypes() {
@@ -40,19 +45,56 @@ export class LeaveController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createLeaveDto: any, @Request() req: any) {
+  @UseInterceptors(FileInterceptor('attachment'))
+  async create(@Body() createLeaveDto: any, @UploadedFile() file: Express.Multer.File, @Request() req: any) {
     try {
-    // Extract userId from JWT token if not provided
-    if (!createLeaveDto.userId) {
-      createLeaveDto.userId = req.user?.sub || req.user?.id;
-    }
+      console.log('🔍 Backend - Received createLeaveDto:', createLeaveDto);
+      console.log('🔍 Backend - JWT user:', req.user);
+      console.log('🔍 Backend - File received:', file ? file.originalname : 'No file');
+      
+      let attachmentUrl = null;
+      
+      // Upload file to Cloudinary if provided
+      if (file) {
+        try {
+          console.log('🔍 Backend - Uploading file to Cloudinary...');
+          const cloudinaryResult = await this.cloudinaryService.uploadToCloudinary(file.buffer, {
+            mimetype: file.mimetype,
+            folder: 'whoosh/leave-attachments',
+          });
+          attachmentUrl = cloudinaryResult.url;
+          console.log('🔍 Backend - File uploaded to Cloudinary:', attachmentUrl);
+        } catch (uploadError) {
+          console.error('🔍 Backend - Cloudinary upload failed:', uploadError);
+          // Continue without attachment if upload fails
+        }
+      }
+      
+      // Parse form data fields
+      const parsedDto = {
+        userId: createLeaveDto.userId ? parseInt(createLeaveDto.userId, 10) : null,
+        leaveType: createLeaveDto.leaveType,
+        startDate: createLeaveDto.startDate,
+        endDate: createLeaveDto.endDate,
+        reason: createLeaveDto.reason,
+        attachment: attachmentUrl
+      };
+      
+      console.log('🔍 Backend - Parsed DTO:', parsedDto);
+      
+      // Extract userId from JWT token if not provided
+      if (!parsedDto.userId) {
+        parsedDto.userId = req.user?.sub || req.user?.id;
+        console.log('🔍 Backend - Set userId from JWT:', parsedDto.userId);
+      }
       
       // Validate that we have a userId
-      if (!createLeaveDto.userId) {
+      if (!parsedDto.userId) {
         throw new Error('User ID is required');
       }
       
-    return this.leaveService.create(createLeaveDto);
+      console.log('🔍 Backend - Final createLeaveDto:', parsedDto);
+      return this.leaveService.create(parsedDto);
     } catch (error) {
       console.error('Error in leave creation controller:', error);
       throw error;

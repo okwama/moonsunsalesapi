@@ -1,8 +1,10 @@
 import { ClockInOutService } from './clock-in-out.service';
+import { ClockOutSchedulerService } from './clock-out-scheduler.service';
 import { ClockInDto, ClockOutDto } from './dto';
 export declare class ClockInOutController {
     private readonly clockInOutService;
-    constructor(clockInOutService: ClockInOutService);
+    private readonly clockOutSchedulerService;
+    constructor(clockInOutService: ClockInOutService, clockOutSchedulerService: ClockOutSchedulerService);
     clockIn(clockInDto: ClockInDto): Promise<{
         success: boolean;
         message: string;
@@ -23,5 +25,9 @@ export declare class ClockInOutController {
     }>;
     getClockHistory(userId: string, startDate?: string, endDate?: string): Promise<{
         sessions: any[];
+    }>;
+    triggerAutoClockOut(): Promise<void>;
+    getActiveSessionsCount(): Promise<{
+        activeSessionsCount: number;
     }>;
 }
