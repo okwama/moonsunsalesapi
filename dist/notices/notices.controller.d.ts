@@ -7,6 +7,6 @@ export declare class NoticesController {
     findAll(countryId?: string): Promise<import("./dto/notice-response.dto").NoticeResponseDto[]>;
     findAllAdmin(): Promise<import("./dto/notice-response.dto").NoticeResponseDto[]>;
     findOne(id: string): Promise<import("./dto/notice-response.dto").NoticeResponseDto>;
-    update(id: string, updateNoticeDto: Partial<CreateNoticeDto>): Promise<import("./entities/notice.entity").Notice>;
+    update(id: string, updateNoticeDto: Partial<CreateNoticeDto>): Promise<import("./dto/notice-response.dto").NoticeResponseDto>;
     remove(id: string): Promise<void>;
 }

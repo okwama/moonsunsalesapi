@@ -8,7 +8,7 @@ export declare class NoticesService {
     create(createNoticeDto: CreateNoticeDto): Promise<Notice>;
     findAll(countryId?: number): Promise<NoticeResponseDto[]>;
     findOne(id: number): Promise<NoticeResponseDto | null>;
-    update(id: number, updateNoticeDto: Partial<CreateNoticeDto>): Promise<Notice | null>;
+    update(id: number, updateNoticeDto: Partial<CreateNoticeDto>): Promise<NoticeResponseDto | null>;
     remove(id: number): Promise<void>;
     findAllAdmin(): Promise<NoticeResponseDto[]>;
 }

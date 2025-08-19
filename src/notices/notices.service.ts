@@ -39,7 +39,7 @@ export class NoticesService {
     return notice ? new NoticeResponseDto(notice) : null;
   }
 
-  async update(id: number, updateNoticeDto: Partial<CreateNoticeDto>): Promise<Notice | null> {
+  async update(id: number, updateNoticeDto: Partial<CreateNoticeDto>): Promise<NoticeResponseDto | null> {
     await this.noticeRepository.update(id, updateNoticeDto);
     return this.findOne(id);
   }
