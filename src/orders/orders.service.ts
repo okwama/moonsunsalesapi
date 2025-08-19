@@ -157,17 +157,148 @@ export class OrdersService {
     return `SO-${currentYear}-${nextNumber.toString().padStart(4, '0')}`;
   }
 
-  async findAll(): Promise<Order[]> {
-    return this.orderRepository.find({
-      relations: ['user', 'client', 'orderItems', 'orderItems.product'],
-    });
+  async findAll(salesrepId?: number, filters?: {
+    status?: string;
+    clientId?: number;
+    startDate?: Date;
+    endDate?: Date;
+    page?: number;
+    limit?: number;
+  }): Promise<{ orders: Order[]; total: number; page: number; limit: number; totalPages: number }> {
+    const query = this.orderRepository.createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('order.client', 'client')
+      .leftJoinAndSelect('order.orderItems', 'orderItems')
+      .leftJoinAndSelect('orderItems.product', 'product');
+
+    // Filter by sales representative (required for security)
+    if (salesrepId) {
+      query.where('order.salesrep = :salesrepId', { salesrepId });
+    } else {
+      // If no salesrepId provided, return empty result for security
+      return {
+        orders: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0
+      };
+    }
+
+    // Apply additional filters
+    if (filters?.status) {
+      query.andWhere('order.status = :status', { status: filters.status });
+    }
+
+    if (filters?.clientId) {
+      query.andWhere('order.clientId = :clientId', { clientId: filters.clientId });
+    }
+
+    if (filters?.startDate) {
+      query.andWhere('order.orderDate >= :startDate', { startDate: filters.startDate });
+    }
+
+    if (filters?.endDate) {
+      query.andWhere('order.orderDate <= :endDate', { endDate: filters.endDate });
+    }
+
+    // Get total count for pagination
+    const total = await query.getCount();
+
+    // Apply pagination
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 10;
+    const offset = (page - 1) * limit;
+
+    query.orderBy('order.createdAt', 'DESC')
+         .skip(offset)
+         .take(limit);
+
+    const orders = await query.getMany();
+
+    return {
+      orders,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
-  async findOne(id: number): Promise<Order | null> {
-    return this.orderRepository.findOne({
-      where: { id },
-      relations: ['user', 'client', 'orderItems', 'orderItems.product'],
-    });
+  async findOne(id: number, salesrepId?: number): Promise<Order | null> {
+    const query = this.orderRepository.createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('order.client', 'client')
+      .leftJoinAndSelect('order.orderItems', 'orderItems')
+      .leftJoinAndSelect('orderItems.product', 'product')
+      .where('order.id = :id', { id });
+
+    // If salesrepId is provided, ensure user can only access their own orders
+    if (salesrepId) {
+      query.andWhere('order.salesrep = :salesrepId', { salesrepId });
+    }
+
+    return query.getOne();
+  }
+
+  // Admin method to find all orders (for admin users)
+  async findAllAdmin(filters?: {
+    status?: string;
+    clientId?: number;
+    salesrepId?: number;
+    startDate?: Date;
+    endDate?: Date;
+    page?: number;
+    limit?: number;
+  }): Promise<{ orders: Order[]; total: number; page: number; limit: number; totalPages: number }> {
+    const query = this.orderRepository.createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('order.client', 'client')
+      .leftJoinAndSelect('order.orderItems', 'orderItems')
+      .leftJoinAndSelect('orderItems.product', 'product');
+
+    // Apply filters
+    if (filters?.status) {
+      query.where('order.status = :status', { status: filters.status });
+    }
+
+    if (filters?.clientId) {
+      query.andWhere('order.clientId = :clientId', { clientId: filters.clientId });
+    }
+
+    if (filters?.salesrepId) {
+      query.andWhere('order.salesrep = :salesrepId', { salesrepId: filters.salesrepId });
+    }
+
+    if (filters?.startDate) {
+      query.andWhere('order.orderDate >= :startDate', { startDate: filters.startDate });
+    }
+
+    if (filters?.endDate) {
+      query.andWhere('order.orderDate <= :endDate', { endDate: filters.endDate });
+    }
+
+    // Get total count for pagination
+    const total = await query.getCount();
+
+    // Apply pagination
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 10;
+    const offset = (page - 1) * limit;
+
+    query.orderBy('order.createdAt', 'DESC')
+         .skip(offset)
+         .take(limit);
+
+    const orders = await query.getMany();
+
+    return {
+      orders,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async update(id: number, updateOrderDto: Partial<CreateOrderDto>): Promise<Order | null> {

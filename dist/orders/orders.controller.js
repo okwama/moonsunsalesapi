@@ -29,26 +29,60 @@ let OrdersController = class OrdersController {
             data: order
         };
     }
-    async findAll(page = '1', limit = '10') {
+    async findAll(req, page = '1', limit = '10', status, clientId, startDate, endDate) {
+        const salesrepId = req.user?.sub || req.user?.id;
+        if (!salesrepId) {
+            return {
+                success: false,
+                message: 'Sales representative ID not found in token',
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+            };
+        }
         const pageNum = parseInt(page, 10);
         const limitNum = parseInt(limit, 10);
-        const orders = await this.ordersService.findAll();
-        const total = orders.length;
-        const totalPages = Math.ceil(total / limitNum);
-        const startIndex = (pageNum - 1) * limitNum;
-        const endIndex = startIndex + limitNum;
-        const paginatedOrders = orders.slice(startIndex, endIndex);
-        return {
-            success: true,
-            data: paginatedOrders,
-            total: total,
+        const filters = {
             page: pageNum,
             limit: limitNum,
-            totalPages: totalPages,
+        };
+        if (status)
+            filters.status = status;
+        if (clientId)
+            filters.clientId = parseInt(clientId, 10);
+        if (startDate)
+            filters.startDate = new Date(startDate);
+        if (endDate)
+            filters.endDate = new Date(endDate);
+        const result = await this.ordersService.findAll(salesrepId, filters);
+        return {
+            success: true,
+            data: result.orders,
+            total: result.total,
+            page: result.page,
+            limit: result.limit,
+            totalPages: result.totalPages,
         };
     }
-    async findOne(id) {
-        const order = await this.ordersService.findOne(+id);
+    async findOne(id, req) {
+        const salesrepId = req.user?.sub || req.user?.id;
+        if (!salesrepId) {
+            return {
+                success: false,
+                message: 'Sales representative ID not found in token',
+                data: null
+            };
+        }
+        const order = await this.ordersService.findOne(+id, salesrepId);
+        if (!order) {
+            return {
+                success: false,
+                message: 'Order not found or access denied',
+                data: null
+            };
+        }
         return {
             success: true,
             data: order
@@ -76,17 +110,23 @@ __decorate([
 ], OrdersController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)('page')),
-    __param(1, (0, common_1.Query)('limit')),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('status')),
+    __param(4, (0, common_1.Query)('clientId')),
+    __param(5, (0, common_1.Query)('startDate')),
+    __param(6, (0, common_1.Query)('endDate')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [Object, String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "findOne", null);
 __decorate([

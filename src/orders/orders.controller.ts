@@ -23,35 +23,78 @@ export class OrdersController {
 
   @Get()
   async findAll(
+    @Request() req,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
+    @Query('status') status?: string,
+    @Query('clientId') clientId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
+    // Extract salesrep ID from JWT token
+    const salesrepId = req.user?.sub || req.user?.id;
+    
+    if (!salesrepId) {
+      return {
+        success: false,
+        message: 'Sales representative ID not found in token',
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+      };
+    }
+
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
     
-    const orders = await this.ordersService.findAll();
+    // Build filters object
+    const filters: any = {
+      page: pageNum,
+      limit: limitNum,
+    };
+
+    if (status) filters.status = status;
+    if (clientId) filters.clientId = parseInt(clientId, 10);
+    if (startDate) filters.startDate = new Date(startDate);
+    if (endDate) filters.endDate = new Date(endDate);
     
-    // Calculate pagination
-    const total = orders.length;
-    const totalPages = Math.ceil(total / limitNum);
-    const startIndex = (pageNum - 1) * limitNum;
-    const endIndex = startIndex + limitNum;
-    const paginatedOrders = orders.slice(startIndex, endIndex);
+    const result = await this.ordersService.findAll(salesrepId, filters);
     
     // Return in format expected by Flutter app
     return {
       success: true,
-      data: paginatedOrders,
-      total: total,
-      page: pageNum,
-      limit: limitNum,
-      totalPages: totalPages,
+      data: result.orders,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
     };
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const order = await this.ordersService.findOne(+id);
+  async findOne(@Param('id') id: string, @Request() req) {
+    // Extract salesrep ID from JWT token
+    const salesrepId = req.user?.sub || req.user?.id;
+    
+    if (!salesrepId) {
+      return {
+        success: false,
+        message: 'Sales representative ID not found in token',
+        data: null
+      };
+    }
+
+    const order = await this.ordersService.findOne(+id, salesrepId);
+    
+    if (!order) {
+      return {
+        success: false,
+        message: 'Order not found or access denied',
+        data: null
+      };
+    }
     
     // Return in format expected by Flutter app
     return {

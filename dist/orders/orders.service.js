@@ -130,16 +130,100 @@ let OrdersService = class OrdersService {
         }
         return `SO-${currentYear}-${nextNumber.toString().padStart(4, '0')}`;
     }
-    async findAll() {
-        return this.orderRepository.find({
-            relations: ['user', 'client', 'orderItems', 'orderItems.product'],
-        });
+    async findAll(salesrepId, filters) {
+        const query = this.orderRepository.createQueryBuilder('order')
+            .leftJoinAndSelect('order.user', 'user')
+            .leftJoinAndSelect('order.client', 'client')
+            .leftJoinAndSelect('order.orderItems', 'orderItems')
+            .leftJoinAndSelect('orderItems.product', 'product');
+        if (salesrepId) {
+            query.where('order.salesrep = :salesrepId', { salesrepId });
+        }
+        else {
+            return {
+                orders: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0
+            };
+        }
+        if (filters?.status) {
+            query.andWhere('order.status = :status', { status: filters.status });
+        }
+        if (filters?.clientId) {
+            query.andWhere('order.clientId = :clientId', { clientId: filters.clientId });
+        }
+        if (filters?.startDate) {
+            query.andWhere('order.orderDate >= :startDate', { startDate: filters.startDate });
+        }
+        if (filters?.endDate) {
+            query.andWhere('order.orderDate <= :endDate', { endDate: filters.endDate });
+        }
+        const total = await query.getCount();
+        const page = filters?.page || 1;
+        const limit = filters?.limit || 10;
+        const offset = (page - 1) * limit;
+        query.orderBy('order.createdAt', 'DESC')
+            .skip(offset)
+            .take(limit);
+        const orders = await query.getMany();
+        return {
+            orders,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        };
     }
-    async findOne(id) {
-        return this.orderRepository.findOne({
-            where: { id },
-            relations: ['user', 'client', 'orderItems', 'orderItems.product'],
-        });
+    async findOne(id, salesrepId) {
+        const query = this.orderRepository.createQueryBuilder('order')
+            .leftJoinAndSelect('order.user', 'user')
+            .leftJoinAndSelect('order.client', 'client')
+            .leftJoinAndSelect('order.orderItems', 'orderItems')
+            .leftJoinAndSelect('orderItems.product', 'product')
+            .where('order.id = :id', { id });
+        if (salesrepId) {
+            query.andWhere('order.salesrep = :salesrepId', { salesrepId });
+        }
+        return query.getOne();
+    }
+    async findAllAdmin(filters) {
+        const query = this.orderRepository.createQueryBuilder('order')
+            .leftJoinAndSelect('order.user', 'user')
+            .leftJoinAndSelect('order.client', 'client')
+            .leftJoinAndSelect('order.orderItems', 'orderItems')
+            .leftJoinAndSelect('orderItems.product', 'product');
+        if (filters?.status) {
+            query.where('order.status = :status', { status: filters.status });
+        }
+        if (filters?.clientId) {
+            query.andWhere('order.clientId = :clientId', { clientId: filters.clientId });
+        }
+        if (filters?.salesrepId) {
+            query.andWhere('order.salesrep = :salesrepId', { salesrepId: filters.salesrepId });
+        }
+        if (filters?.startDate) {
+            query.andWhere('order.orderDate >= :startDate', { startDate: filters.startDate });
+        }
+        if (filters?.endDate) {
+            query.andWhere('order.orderDate <= :endDate', { endDate: filters.endDate });
+        }
+        const total = await query.getCount();
+        const page = filters?.page || 1;
+        const limit = filters?.limit || 10;
+        const offset = (page - 1) * limit;
+        query.orderBy('order.createdAt', 'DESC')
+            .skip(offset)
+            .take(limit);
+        const orders = await query.getMany();
+        return {
+            orders,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        };
     }
     async update(id, updateOrderDto) {
         const queryRunner = this.dataSource.createQueryRunner();
