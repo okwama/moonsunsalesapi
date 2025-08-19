@@ -45,6 +45,9 @@ let ClockInOutController = class ClockInOutController {
         const count = await this.clockOutSchedulerService.getActiveSessionsCount();
         return { activeSessionsCount: count };
     }
+    async forceClockOut(userId) {
+        return await this.clockInOutService.forceClockOut(parseInt(userId));
+    }
 };
 exports.ClockInOutController = ClockInOutController;
 __decorate([
@@ -99,6 +102,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], ClockInOutController.prototype, "getActiveSessionsCount", null);
+__decorate([
+    (0, common_1.Post)('force-clockout/:userId'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ClockInOutController.prototype, "forceClockOut", null);
 exports.ClockInOutController = ClockInOutController = __decorate([
     (0, common_1.Controller)('clock-in-out'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

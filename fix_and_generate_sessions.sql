@@ -82,7 +82,7 @@ CROSS JOIN (
         AND DATE_ADD('2025-08-01', INTERVAL seq DAY) <= '2025-08-18'
 ) working_days
 WHERE 
-    sr.status = 1  -- Only active sales representatives
+    sr.status = 0  -- Only active sales representatives
     AND sr.role = 'SALES_REP'  -- Only sales representatives
 ORDER BY 
     sr.id, session_date;
@@ -146,3 +146,53 @@ GROUP BY
         WHEN duration <= 0 THEN 'Zero or negative duration'
         WHEN duration IS NULL THEN 'Missing duration'
     END;
+
+-- =====================================================
+-- PART 4: CREATE MISSING STORED PROCEDURES
+-- =====================================================
+
+-- Create GetClockSessions stored procedure
+DELIMITER //
+CREATE PROCEDURE GetClockSessions(
+    IN p_userId INT,
+    IN p_startDate VARCHAR(10),
+    IN p_endDate VARCHAR(10),
+    IN p_limit INT
+)
+BEGIN
+    SELECT 
+        id,
+        userId,
+        sessionStart,
+        sessionEnd,
+        duration,
+        status,
+        timezone,
+        -- Add formatted fields for easier frontend consumption
+        CASE 
+            WHEN status = 1 THEN 'Active'
+            ELSE 'Completed'
+        END as status_text,
+        CASE 
+            WHEN duration IS NOT NULL THEN 
+                CONCAT(FLOOR(duration/60), 'h ', MOD(duration,60), 'm')
+            ELSE 'N/A'
+        END as duration_formatted,
+        CASE 
+            WHEN sessionStart IS NOT NULL THEN 
+                DATE_FORMAT(sessionStart, '%b %d, %Y %h:%i %p')
+            ELSE 'N/A'
+        END as formatted_start,
+        CASE 
+            WHEN sessionEnd IS NOT NULL THEN 
+                DATE_FORMAT(sessionEnd, '%b %d, %Y %h:%i %p')
+            ELSE 'N/A'
+        END as formatted_end
+    FROM LoginHistory 
+    WHERE userId = p_userId
+        AND (p_startDate IS NULL OR DATE(sessionStart) >= p_startDate)
+        AND (p_endDate IS NULL OR DATE(sessionStart) <= p_endDate)
+    ORDER BY sessionStart DESC
+    LIMIT p_limit;
+END //
+DELIMITER ;

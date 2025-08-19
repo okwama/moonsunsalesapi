@@ -79,4 +79,13 @@ export class ClockInOutController {
     const count = await this.clockOutSchedulerService.getActiveSessionsCount();
     return { activeSessionsCount: count };
   }
+
+  /**
+   * Force clock out a user (admin function)
+   */
+  @Post('force-clockout/:userId')
+  @HttpCode(HttpStatus.OK)
+  async forceClockOut(@Param('userId') userId: string) {
+    return await this.clockInOutService.forceClockOut(parseInt(userId));
+  }
 } 

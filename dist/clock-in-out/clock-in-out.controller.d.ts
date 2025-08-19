@@ -19,6 +19,7 @@ export declare class ClockInOutController {
         isClockedIn: boolean;
         sessionStart?: string;
         duration?: number;
+        sessionId?: number;
     }>;
     getTodaySessions(userId: string): Promise<{
         sessions: any[];
@@ -29,5 +30,10 @@ export declare class ClockInOutController {
     triggerAutoClockOut(): Promise<void>;
     getActiveSessionsCount(): Promise<{
         activeSessionsCount: number;
+    }>;
+    forceClockOut(userId: string): Promise<{
+        success: boolean;
+        message: string;
+        closedSessions?: number;
     }>;
 }

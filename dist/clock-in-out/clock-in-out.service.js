@@ -28,6 +28,7 @@ let ClockInOutService = ClockInOutService_1 = class ClockInOutService {
         try {
             const { userId, clientTime } = clockInDto;
             this.logger.log(`🟢 Clock In attempt for user ${userId} at ${clientTime}`);
+            await this.cleanupMultipleActiveSessions(userId);
             const activeSession = await this.loginHistoryRepository.findOne({
                 where: {
                     userId,
@@ -36,12 +37,28 @@ let ClockInOutService = ClockInOutService_1 = class ClockInOutService {
                 order: { sessionStart: 'DESC' },
             });
             if (activeSession) {
-                this.logger.warn(`⚠️ User ${userId} already has an active session`);
+                this.logger.log(`✅ User ${userId} has active session, continuing existing session`);
                 return {
-                    success: false,
-                    message: 'You are already clocked in. Please clock out first.',
+                    success: true,
+                    message: 'Continuing existing session',
+                    sessionId: activeSession.id,
                 };
             }
+            const todaySession = await this.getTodaySession(userId, clientTime);
+            if (todaySession && todaySession.status === 2) {
+                await this.loginHistoryRepository.update(todaySession.id, {
+                    status: 1,
+                    sessionEnd: null,
+                    duration: 0,
+                });
+                this.logger.log(`✅ User ${userId} continuing today's session. Session ID: ${todaySession.id}`);
+                return {
+                    success: true,
+                    message: 'Continuing today\'s session',
+                    sessionId: todaySession.id,
+                };
+            }
+            await this.forceCloseOldSessions(userId, clientTime);
             const newSession = this.loginHistoryRepository.create({
                 userId,
                 status: 1,
@@ -86,16 +103,24 @@ let ClockInOutService = ClockInOutService_1 = class ClockInOutService {
             const startTime = new Date(activeSession.sessionStart);
             const endTime = new Date(clientTime);
             const durationMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+            const validatedDuration = Math.min(durationMinutes, 480);
+            let finalEndTime = clientTime;
+            if (durationMinutes > 480) {
+                const cappedEndTime = new Date(startTime);
+                cappedEndTime.setHours(18, 0, 0, 0);
+                finalEndTime = cappedEndTime.toISOString().slice(0, 19).replace('T', ' ');
+                this.logger.warn(`⚠️ Session duration exceeded 8 hours, capping end time to 6:00 PM for user ${userId}`);
+            }
             await this.loginHistoryRepository.update(activeSession.id, {
                 status: 2,
-                sessionEnd: clientTime,
-                duration: durationMinutes,
+                sessionEnd: finalEndTime,
+                duration: validatedDuration,
             });
-            this.logger.log(`✅ User ${userId} clocked out successfully. Duration: ${durationMinutes} minutes`);
+            this.logger.log(`✅ User ${userId} clocked out successfully. Duration: ${validatedDuration} minutes`);
             return {
                 success: true,
                 message: 'Successfully clocked out',
-                duration: durationMinutes,
+                duration: validatedDuration,
             };
         }
         catch (error) {
@@ -108,6 +133,7 @@ let ClockInOutService = ClockInOutService_1 = class ClockInOutService {
     }
     async getCurrentStatus(userId) {
         try {
+            await this.cleanupMultipleActiveSessions(userId);
             const activeSession = await this.loginHistoryRepository.findOne({
                 where: {
                     userId,
@@ -125,6 +151,7 @@ let ClockInOutService = ClockInOutService_1 = class ClockInOutService {
                 isClockedIn: true,
                 sessionStart: activeSession.sessionStart,
                 duration: currentDuration,
+                sessionId: activeSession.id,
             };
         }
         catch (error) {
@@ -244,6 +271,129 @@ let ClockInOutService = ClockInOutService_1 = class ClockInOutService {
         }
         else {
             return `${remainingMinutes}m`;
+        }
+    }
+    async cleanupMultipleActiveSessions(userId) {
+        try {
+            const activeSessions = await this.loginHistoryRepository.find({
+                where: {
+                    userId,
+                    status: 1,
+                },
+                order: { sessionStart: 'DESC' },
+            });
+            if (activeSessions.length > 1) {
+                this.logger.warn(`⚠️ User ${userId} has ${activeSessions.length} active sessions, cleaning up...`);
+                const newestSession = activeSessions[0];
+                const sessionsToClose = activeSessions.slice(1);
+                for (const session of sessionsToClose) {
+                    const startTime = new Date(session.sessionStart);
+                    const endTime = new Date(startTime);
+                    endTime.setHours(18, 0, 0, 0);
+                    const durationMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+                    await this.loginHistoryRepository.update(session.id, {
+                        status: 2,
+                        sessionEnd: endTime.toISOString().slice(0, 19).replace('T', ' '),
+                        duration: durationMinutes,
+                    });
+                    this.logger.log(`✅ Auto-closed old session ${session.id} for user ${userId}`);
+                }
+            }
+        }
+        catch (error) {
+            this.logger.error(`❌ Failed to cleanup multiple active sessions for user ${userId}: ${error.message}`);
+        }
+    }
+    async forceCloseOldSessions(userId, currentTime) {
+        try {
+            const today = new Date(currentTime);
+            const todayStr = today.toISOString().split('T')[0];
+            const oldSessions = await this.loginHistoryRepository
+                .createQueryBuilder('session')
+                .where('session.userId = :userId', { userId })
+                .andWhere('DATE(session.sessionStart) < :today', { today: todayStr })
+                .andWhere('session.status = 1')
+                .getMany();
+            if (oldSessions.length > 0) {
+                this.logger.warn(`⚠️ User ${userId} has ${oldSessions.length} old active sessions, forcing close...`);
+                for (const session of oldSessions) {
+                    const startTime = new Date(session.sessionStart);
+                    const endTime = new Date(startTime);
+                    endTime.setHours(18, 0, 0, 0);
+                    const durationMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+                    await this.loginHistoryRepository.update(session.id, {
+                        status: 2,
+                        sessionEnd: endTime.toISOString().slice(0, 19).replace('T', ' '),
+                        duration: durationMinutes,
+                    });
+                    this.logger.log(`✅ Forced closed old session ${session.id} for user ${userId}`);
+                }
+            }
+        }
+        catch (error) {
+            this.logger.error(`❌ Failed to force close old sessions for user ${userId}: ${error.message}`);
+        }
+    }
+    async getTodaySession(userId, clientTime) {
+        try {
+            const today = new Date(clientTime);
+            const todayStr = today.toISOString().split('T')[0];
+            const todaySession = await this.loginHistoryRepository
+                .createQueryBuilder('session')
+                .where('session.userId = :userId', { userId })
+                .andWhere('DATE(session.sessionStart) = :today', { today: todayStr })
+                .orderBy('session.sessionStart', 'DESC')
+                .getOne();
+            return todaySession;
+        }
+        catch (error) {
+            this.logger.error(`❌ Failed to get today's session for user ${userId}: ${error.message}`);
+            return null;
+        }
+    }
+    async forceClockOut(userId) {
+        try {
+            this.logger.log(`🔧 Force clock out requested for user ${userId}`);
+            const activeSessions = await this.loginHistoryRepository.find({
+                where: {
+                    userId,
+                    status: 1,
+                },
+                order: { sessionStart: 'DESC' },
+            });
+            if (activeSessions.length === 0) {
+                return {
+                    success: false,
+                    message: 'User has no active sessions to close.',
+                };
+            }
+            let closedCount = 0;
+            for (const session of activeSessions) {
+                const startTime = new Date(session.sessionStart);
+                const endTime = new Date(startTime);
+                endTime.setHours(18, 0, 0, 0);
+                const durationMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+                await this.loginHistoryRepository.update(session.id, {
+                    status: 2,
+                    sessionEnd: endTime.toISOString().slice(0, 19).replace('T', ' '),
+                    duration: durationMinutes,
+                });
+                closedCount++;
+                this.logger.log(`✅ Force closed session ${session.id} for user ${userId}`);
+            }
+            this.logger.log(`✅ Force clock out completed for user ${userId}. Closed ${closedCount} sessions.`);
+            return {
+                success: true,
+                message: `Successfully closed ${closedCount} active session(s)`,
+                closedSessions: closedCount,
+            };
+        }
+        catch (error) {
+            this.logger.error(`❌ Force clock out failed for user ${userId}: ${error.message}`);
+            return {
+                success: false,
+                message: 'Failed to force clock out. Please try again.',
+            };
         }
     }
 };

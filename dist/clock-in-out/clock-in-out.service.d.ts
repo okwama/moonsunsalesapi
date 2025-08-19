@@ -20,6 +20,7 @@ export declare class ClockInOutService {
         isClockedIn: boolean;
         sessionStart?: string;
         duration?: number;
+        sessionId?: number;
     }>;
     getTodaySessions(userId: number): Promise<{
         sessions: any[];
@@ -33,4 +34,12 @@ export declare class ClockInOutService {
     private getClockSessionsFallback;
     private formatDateTime;
     private formatDuration;
+    private cleanupMultipleActiveSessions;
+    private forceCloseOldSessions;
+    private getTodaySession;
+    forceClockOut(userId: number): Promise<{
+        success: boolean;
+        message: string;
+        closedSessions?: number;
+    }>;
 }
