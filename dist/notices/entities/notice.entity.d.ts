@@ -3,6 +3,7 @@ export declare class Notice {
     title: string;
     content: string;
     countryId: number;
+    status: number;
     createdAt: Date;
-    updatedAt: Date;
+    get updatedAt(): Date;
 }

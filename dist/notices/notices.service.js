@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const notice_entity_1 = require("./entities/notice.entity");
+const notice_response_dto_1 = require("./dto/notice-response.dto");
 let NoticesService = class NoticesService {
     constructor(noticeRepository) {
         this.noticeRepository = noticeRepository;
@@ -25,22 +26,33 @@ let NoticesService = class NoticesService {
         const notice = this.noticeRepository.create(createNoticeDto);
         return this.noticeRepository.save(notice);
     }
-    async findAll() {
-        return this.noticeRepository.find({
-            order: { createdAt: 'DESC' },
-        });
+    async findAll(countryId) {
+        const query = this.noticeRepository.createQueryBuilder('notice');
+        query.where('notice.status = :status', { status: 0 });
+        if (countryId) {
+            query.andWhere('notice.countryId = :countryId', { countryId });
+        }
+        const notices = await query.orderBy('notice.createdAt', 'DESC').getMany();
+        return notices.map(notice => new notice_response_dto_1.NoticeResponseDto(notice));
     }
     async findOne(id) {
-        return this.noticeRepository.findOne({
+        const notice = await this.noticeRepository.findOne({
             where: { id },
         });
+        return notice ? new notice_response_dto_1.NoticeResponseDto(notice) : null;
     }
     async update(id, updateNoticeDto) {
         await this.noticeRepository.update(id, updateNoticeDto);
         return this.findOne(id);
     }
     async remove(id) {
-        await this.noticeRepository.delete(id);
+        await this.noticeRepository.update(id, { status: 1 });
+    }
+    async findAllAdmin() {
+        const notices = await this.noticeRepository.find({
+            order: { createdAt: 'DESC' },
+        });
+        return notices.map(notice => new notice_response_dto_1.NoticeResponseDto(notice));
     }
 };
 exports.NoticesService = NoticesService;

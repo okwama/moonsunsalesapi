@@ -7,7 +7,10 @@ export class CreateNoticeDto {
   @IsString()
   content: string;
 
+  @IsNumber()
+  countryId: number;
+
   @IsOptional()
   @IsNumber()
-  countryId?: number;
+  status?: number;
 } 

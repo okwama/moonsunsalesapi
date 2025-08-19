@@ -212,3 +212,4 @@ SELECT * FROM LoginHistory WHERE userId = 1 ORDER BY sessionStart DESC;
 -- Check today's sessions
 SELECT * FROM LoginHistory WHERE DATE(sessionStart) = CURDATE();
 ```
+

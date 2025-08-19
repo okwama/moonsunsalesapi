@@ -3,26 +3,30 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('NoticeBoard')
+@Entity('notices')
 export class Notice {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 191 })
+  @Column({ length: 255 })
   title: string;
 
-  @Column({ length: 191 })
+  @Column({ type: 'text' })
   content: string;
 
-  @Column({ name: 'countryId', type: 'int', nullable: true })
+  @Column({ name: 'country_id', type: 'int' })
   countryId: number;
 
-  @CreateDateColumn({ name: 'createdAt', type: 'datetime', precision: 3 })
+  @Column({ type: 'tinyint', default: 0 })
+  status: number;
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updatedAt', type: 'datetime', precision: 3 })
-  updatedAt: Date;
+  // Virtual property to match Flutter expectations
+  get updatedAt(): Date {
+    return this.createdAt;
+  }
 } 

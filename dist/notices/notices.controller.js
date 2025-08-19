@@ -24,8 +24,12 @@ let NoticesController = class NoticesController {
     create(createNoticeDto) {
         return this.noticesService.create(createNoticeDto);
     }
-    findAll() {
-        return this.noticesService.findAll();
+    findAll(countryId) {
+        const countryIdNumber = countryId ? +countryId : undefined;
+        return this.noticesService.findAll(countryIdNumber);
+    }
+    findAllAdmin() {
+        return this.noticesService.findAllAdmin();
     }
     findOne(id) {
         return this.noticesService.findOne(+id);
@@ -47,10 +51,17 @@ __decorate([
 ], NoticesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)('countryId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], NoticesController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('admin'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
-], NoticesController.prototype, "findAll", null);
+], NoticesController.prototype, "findAllAdmin", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { NoticesService } from './notices.service';
 import { CreateNoticeDto } from './dto/create-notice.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -14,8 +14,14 @@ export class NoticesController {
   }
 
   @Get()
-  findAll() {
-    return this.noticesService.findAll();
+  findAll(@Query('countryId') countryId?: string) {
+    const countryIdNumber = countryId ? +countryId : undefined;
+    return this.noticesService.findAll(countryIdNumber);
+  }
+
+  @Get('admin')
+  findAllAdmin() {
+    return this.noticesService.findAllAdmin();
   }
 
   @Get(':id')

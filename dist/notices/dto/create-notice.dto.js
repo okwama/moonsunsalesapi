@@ -23,8 +23,12 @@ __decorate([
     __metadata("design:type", String)
 ], CreateNoticeDto.prototype, "content", void 0);
 __decorate([
-    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreateNoticeDto.prototype, "countryId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateNoticeDto.prototype, "status", void 0);
 //# sourceMappingURL=create-notice.dto.js.map
