@@ -43,7 +43,10 @@ let ClientsService = class ClientsService {
                 'region',
                 'region_id',
                 'status',
-                'countryId'
+                'countryId',
+                'latitude',
+                'longitude',
+                'location'
             ],
             order: { name: 'ASC' },
         });
@@ -71,7 +74,10 @@ let ClientsService = class ClientsService {
                 'region',
                 'region_id',
                 'status',
-                'countryId'
+                'countryId',
+                'latitude',
+                'longitude',
+                'location'
             ],
         });
     }
@@ -109,7 +115,10 @@ let ClientsService = class ClientsService {
             'client.region',
             'client.region_id',
             'client.status',
-            'client.countryId'
+            'client.countryId',
+            'client.latitude',
+            'client.longitude',
+            'client.location'
         ])
             .orderBy('client.name', 'ASC')
             .getMany();
@@ -127,7 +136,10 @@ let ClientsService = class ClientsService {
                 'region',
                 'region_id',
                 'status',
-                'countryId'
+                'countryId',
+                'latitude',
+                'longitude',
+                'location'
             ],
             order: { name: 'ASC' },
         });
@@ -146,7 +158,10 @@ let ClientsService = class ClientsService {
                 'region',
                 'region_id',
                 'status',
-                'countryId'
+                'countryId',
+                'latitude',
+                'longitude',
+                'location'
             ],
             order: { name: 'ASC' },
         });
@@ -165,7 +180,10 @@ let ClientsService = class ClientsService {
                 'region',
                 'region_id',
                 'status',
-                'countryId'
+                'countryId',
+                'latitude',
+                'longitude',
+                'location'
             ],
             order: { name: 'ASC' },
         });

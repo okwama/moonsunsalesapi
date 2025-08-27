@@ -38,7 +38,10 @@ export class ClientsService {
         'region',
         'region_id',
         'status',
-        'countryId'
+        'countryId',
+        'latitude',
+        'longitude',
+        'location'
       ],
       order: { name: 'ASC' },
     });
@@ -68,7 +71,10 @@ export class ClientsService {
         'region',
         'region_id',
         'status',
-        'countryId'
+        'countryId',
+        'latitude',
+        'longitude',
+        'location'
       ],
     });
   }
@@ -123,7 +129,10 @@ export class ClientsService {
         'client.region',
         'client.region_id',
         'client.status',
-        'client.countryId'
+        'client.countryId',
+        'client.latitude',
+        'client.longitude',
+        'client.location'
       ])
       .orderBy('client.name', 'ASC')
       .getMany();
@@ -144,7 +153,10 @@ export class ClientsService {
         'region',
         'region_id',
         'status',
-        'countryId'
+        'countryId',
+        'latitude',
+        'longitude',
+        'location'
       ],
       order: { name: 'ASC' },
     });
@@ -164,7 +176,10 @@ export class ClientsService {
         'region',
         'region_id',
         'status',
-        'countryId'
+        'countryId',
+        'latitude',
+        'longitude',
+        'location'
       ],
       order: { name: 'ASC' },
     });
@@ -184,7 +199,10 @@ export class ClientsService {
         'region',
         'region_id',
         'status',
-        'countryId'
+        'countryId',
+        'latitude',
+        'longitude',
+        'location'
       ],
       order: { name: 'ASC' },
     });

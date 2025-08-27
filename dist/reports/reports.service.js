@@ -19,11 +19,15 @@ const typeorm_2 = require("typeorm");
 const feedback_report_entity_1 = require("../entities/feedback-report.entity");
 const product_report_entity_1 = require("../entities/product-report.entity");
 const visibility_report_entity_1 = require("../entities/visibility-report.entity");
+const show_of_shelf_report_entity_1 = require("../entities/show-of-shelf-report.entity");
+const product_expiry_report_entity_1 = require("../entities/product-expiry-report.entity");
 let ReportsService = class ReportsService {
-    constructor(feedbackReportRepository, productReportRepository, visibilityReportRepository) {
+    constructor(feedbackReportRepository, productReportRepository, visibilityReportRepository, showOfShelfReportRepository, productExpiryReportRepository) {
         this.feedbackReportRepository = feedbackReportRepository;
         this.productReportRepository = productReportRepository;
         this.visibilityReportRepository = visibilityReportRepository;
+        this.showOfShelfReportRepository = showOfShelfReportRepository;
+        this.productExpiryReportRepository = productExpiryReportRepository;
     }
     async submitReport(reportData) {
         try {
@@ -126,10 +130,50 @@ let ReportsService = class ReportsService {
                     console.log('✅ Visibility report created at:', savedVisibilityReport.createdAt);
                     console.log('📋 ===== VISIBILITY ACTIVITY REPORT CREATION COMPLETE =====');
                     return savedVisibilityReport;
+                case 'SHOW_OF_SHELF':
+                    console.log('📋 ===== SHOW OF SHELF REPORT CREATION =====');
+                    const { reportId: showOfShelfReportId, ...showOfShelfDetails } = details || {};
+                    const showOfShelfDataToSave = {
+                        ...mainData,
+                        ...showOfShelfDetails,
+                        userId: userId || salesRepId
+                    };
+                    console.log('📋 Creating show of shelf report with data:', JSON.stringify(showOfShelfDataToSave, null, 2));
+                    const showOfShelfReport = this.showOfShelfReportRepository.create(showOfShelfDataToSave);
+                    console.log('📋 Show of shelf report entity created:', JSON.stringify(showOfShelfReport, null, 2));
+                    const savedShowOfShelfReport = await this.showOfShelfReportRepository.save(showOfShelfReport);
+                    console.log('✅ Show of shelf report saved successfully!');
+                    console.log('✅ Show of shelf report ID:', savedShowOfShelfReport.id);
+                    console.log('✅ Product name:', savedShowOfShelfReport.productName);
+                    console.log('✅ Total items on shelf:', savedShowOfShelfReport.totalItemsOnShelf);
+                    console.log('✅ Company items on shelf:', savedShowOfShelfReport.companyItemsOnShelf);
+                    console.log('✅ Show of shelf report created at:', savedShowOfShelfReport.createdAt);
+                    console.log('📋 ===== SHOW OF SHELF REPORT CREATION COMPLETE =====');
+                    return savedShowOfShelfReport;
+                case 'PRODUCT_EXPIRY':
+                    console.log('📋 ===== PRODUCT EXPIRY REPORT CREATION =====');
+                    const { reportId: productExpiryReportId, ...productExpiryDetails } = details || {};
+                    const productExpiryDataToSave = {
+                        ...mainData,
+                        ...productExpiryDetails,
+                        userId: userId || salesRepId
+                    };
+                    console.log('📋 Creating product expiry report with data:', JSON.stringify(productExpiryDataToSave, null, 2));
+                    const productExpiryReport = this.productExpiryReportRepository.create(productExpiryDataToSave);
+                    console.log('📋 Product expiry report entity created:', JSON.stringify(productExpiryReport, null, 2));
+                    const savedProductExpiryReport = await this.productExpiryReportRepository.save(productExpiryReport);
+                    console.log('✅ Product expiry report saved successfully!');
+                    console.log('✅ Product expiry report ID:', savedProductExpiryReport.id);
+                    console.log('✅ Product name:', savedProductExpiryReport.productName);
+                    console.log('✅ Quantity:', savedProductExpiryReport.quantity);
+                    console.log('✅ Expiry date:', savedProductExpiryReport.expiryDate);
+                    console.log('✅ Product expiry report created at:', savedProductExpiryReport.createdAt);
+                    console.log('📋 ===== PRODUCT EXPIRY REPORT CREATION COMPLETE =====');
+                    return savedProductExpiryReport;
                 default:
                     console.error('❌ ===== UNKNOWN REPORT TYPE =====');
                     console.error('❌ Unknown report type:', reportType);
-                    console.error('❌ Available types: FEEDBACK, PRODUCT_AVAILABILITY, VISIBILITY_ACTIVITY');
+                    console.error('❌ Available types: FEEDBACK, PRODUCT_AVAILABILITY, VISIBILITY_ACTIVITY, SHOW_OF_SHELF, PRODUCT_EXPIRY');
                     console.error('❌ Received data:', JSON.stringify(reportData, null, 2));
                     throw new Error(`Unknown report type: ${reportType}`);
             }
@@ -154,7 +198,7 @@ let ReportsService = class ReportsService {
     }
     async getReportsByJourneyPlan(journeyPlanId) {
         try {
-            const [feedbackReports, productReports, visibilityReports] = await Promise.all([
+            const [feedbackReports, productReports, visibilityReports, showOfShelfReports, productExpiryReports] = await Promise.all([
                 this.feedbackReportRepository.find({
                     relations: ['user', 'client'],
                     order: { createdAt: 'DESC' },
@@ -167,11 +211,21 @@ let ReportsService = class ReportsService {
                     relations: ['user', 'client'],
                     order: { createdAt: 'DESC' },
                 }),
+                this.showOfShelfReportRepository.find({
+                    relations: ['user', 'client'],
+                    order: { createdAt: 'DESC' },
+                }),
+                this.productExpiryReportRepository.find({
+                    relations: ['user', 'client'],
+                    order: { createdAt: 'DESC' },
+                }),
             ]);
             return {
                 feedbackReports,
                 productReports,
                 visibilityReports,
+                showOfShelfReports,
+                productExpiryReports,
             };
         }
         catch (error) {
@@ -211,7 +265,11 @@ exports.ReportsService = ReportsService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(feedback_report_entity_1.FeedbackReport)),
     __param(1, (0, typeorm_1.InjectRepository)(product_report_entity_1.ProductReport)),
     __param(2, (0, typeorm_1.InjectRepository)(visibility_report_entity_1.VisibilityReport)),
+    __param(3, (0, typeorm_1.InjectRepository)(show_of_shelf_report_entity_1.ShowOfShelfReport)),
+    __param(4, (0, typeorm_1.InjectRepository)(product_expiry_report_entity_1.ProductExpiryReport)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])
 ], ReportsService);

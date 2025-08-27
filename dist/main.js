@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = handler;
+const node_crypto_1 = require("node:crypto");
+if (!global.crypto) {
+    global.crypto = node_crypto_1.webcrypto;
+}
 const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
 const common_1 = require("@nestjs/common");
@@ -50,8 +54,8 @@ async function handler(req, res) {
 if (process.env.NODE_ENV !== 'production') {
     bootstrap().then((app) => {
         const port = process.env.PORT || 3000;
-        app.listen(port, '0.0.0.0', 'localhost', () => {
-            console.log(`🌐 Network accessible on: http://192.168.100.2:${port}`);
+        app.listen(port, 'localhost', () => {
+            console.log(`🌐 Network accessible on: http://localhost:${port}`);
         });
     }).catch((error) => {
         console.error('❌ Failed to start application:', error);

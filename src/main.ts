@@ -1,3 +1,9 @@
+// Polyfill for crypto module
+import { webcrypto } from 'node:crypto';
+if (!global.crypto) {
+  global.crypto = webcrypto as any;
+}
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -62,8 +68,8 @@ export default async function handler(req: any, res: any) {
 if (process.env.NODE_ENV !== 'production') {
   bootstrap().then((app) => {
     const port = process.env.PORT || 3000;
-    app.listen(port, '0.0.0.0', 'localhost', () => {
-      console.log(`🌐 Network accessible on: http://192.168.100.2:${port}`);
+    app.listen(port, 'localhost', () => {
+      console.log(`🌐 Network accessible on: http://localhost:${port}`);
     });
   }).catch((error) => {
     console.error('❌ Failed to start application:', error);

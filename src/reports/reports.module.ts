@@ -5,6 +5,8 @@ import { ReportsService } from './reports.service';
 import { FeedbackReport } from 'src/entities/feedback-report.entity';
 import { ProductReport } from 'src/entities/product-report.entity';
 import { VisibilityReport } from 'src/entities/visibility-report.entity';
+import { ShowOfShelfReport } from 'src/entities/show-of-shelf-report.entity';
+import { ProductExpiryReport } from 'src/entities/product-expiry-report.entity';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { VisibilityReport } from 'src/entities/visibility-report.entity';
       FeedbackReport,
       ProductReport,
       VisibilityReport,
+      ShowOfShelfReport,
+      ProductExpiryReport,
     ]),
   ],
   controllers: [ReportsController],
